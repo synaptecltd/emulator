@@ -32,6 +32,8 @@ const MaxEmulatedFrequencyDurationSamples = 8000
 // EmulatedFaultCurrentMagnitude is the additional fault current magnitude added to one circuit end
 const EmulatedFaultCurrentMagnitude = 80
 
+const TwoPiOverThree = 2 * math.Pi / 3
+
 type ThreePhaseEmulation struct {
 	// inputs
 	PosSeqMag       float64
@@ -191,13 +193,13 @@ func (e *ThreePhaseEmulation) StepThreePhase(r *rand.Rand, f float64, Ts float64
 
 	// positive sequence
 	a1 := math.Sin(PosSeqPhase) * posSeqMag
-	b1 := math.Sin(PosSeqPhase-2*math.Pi/3) * posSeqMag
-	c1 := math.Sin(PosSeqPhase+2*math.Pi/3) * posSeqMag
+	b1 := math.Sin(PosSeqPhase-TwoPiOverThree) * posSeqMag
+	c1 := math.Sin(PosSeqPhase+TwoPiOverThree) * posSeqMag
 
 	// negative sequence
 	a2 := math.Sin(PosSeqPhase+e.NegSeqAng) * e.NegSeqMag * e.PosSeqMag
-	b2 := math.Sin(PosSeqPhase+2*math.Pi/3+e.NegSeqAng) * e.NegSeqMag * e.PosSeqMag
-	c2 := math.Sin(PosSeqPhase-2*math.Pi/3+e.NegSeqAng) * e.NegSeqMag * e.PosSeqMag
+	b2 := math.Sin(PosSeqPhase+TwoPiOverThree+e.NegSeqAng) * e.NegSeqMag * e.PosSeqMag
+	c2 := math.Sin(PosSeqPhase-TwoPiOverThree+e.NegSeqAng) * e.NegSeqMag * e.PosSeqMag
 
 	// zero sequence
 	abc0 := math.Sin(PosSeqPhase+e.ZeroSeqAng) * e.ZeroSeqMag
@@ -210,20 +212,22 @@ func (e *ThreePhaseEmulation) StepThreePhase(r *rand.Rand, f float64, Ts float64
 		// ensure consistent array sizes have been specified
 		if len(e.HarmonicNumbers) == len(e.HarmonicMags) && len(e.HarmonicNumbers) == len(e.HarmonicAngs) {
 			for i, n := range e.HarmonicNumbers {
-				mag := e.HarmonicMags[i]
+				mag := e.HarmonicMags[i] * e.PosSeqMag
 				ang := e.HarmonicAngs[i] // / 180.0 * math.Pi
 
-				ah = ah + math.Sin(n*(PosSeqPhase)+ang)*mag*e.PosSeqMag
-				bh = bh + math.Sin(n*(PosSeqPhase-2*math.Pi/3)+ang)*mag*e.PosSeqMag
-				ch = ch + math.Sin(n*(PosSeqPhase+2*math.Pi/3)+ang)*mag*e.PosSeqMag
+				ah = ah + math.Sin(n*(PosSeqPhase)+ang)*mag
+				bh = bh + math.Sin(n*(PosSeqPhase-TwoPiOverThree)+ang)*mag
+				ch = ch + math.Sin(n*(PosSeqPhase+TwoPiOverThree)+ang)*mag
 			}
 		}
 	}
 
+	// add noise, ensure worst case where noise is uncorrelated across phases
 	ra := r.NormFloat64() * e.NoiseMax * e.PosSeqMag
 	rb := r.NormFloat64() * e.NoiseMax * e.PosSeqMag
 	rc := r.NormFloat64() * e.NoiseMax * e.PosSeqMag
 
+	// combine the output for each phase
 	e.A = a1 + a2 + abc0 + ah + ra
 	e.B = b1 + b2 + abc0 + bh + rb
 	e.C = c1 + c2 + abc0 + ch + rc
