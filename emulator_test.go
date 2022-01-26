@@ -43,7 +43,6 @@ func createEmulator(samplingRate int) *Emulator {
 func TestTemperatureEmulatorAnomalies_NoAmomalies(t *testing.T) {
 	emulator := createEmulator(14400)
 
-	// no anomalies case
 	emulator.T.AnomalyProbability = 0
 	step := 0
 	var results []bool
@@ -58,7 +57,6 @@ func TestTemperatureEmulatorAnomalies_NoAmomalies(t *testing.T) {
 func TestTemperatureEmulatorAnomalies_Amomalies(t *testing.T) {
 	emulator := createEmulator(14400)
 
-	// anomalies case
 	emulator.T.AnomalyProbability = 0.5
 	step := 0
 	var results []bool
