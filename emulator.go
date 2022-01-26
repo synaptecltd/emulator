@@ -136,12 +136,21 @@ func (e *Emulator) StartEvent(eventType int) {
 	}
 }
 
-// Step performs one iteration of the waveform generation
-func (e *Emulator) Step() {
-	if e.r == nil {
-		e.r = rand.New(rand.NewSource(time.Now().Unix()))
+func NewEmulator(samplingRate int, frequency float64) *Emulator {
+	emu := &Emulator{
+		SamplingRate: samplingRate,
+		Fnom:         frequency,
+		Fdeviation:   0.0,
+		Ts:           1 / float64(samplingRate),
 	}
 
+	emu.r = rand.New(rand.NewSource(time.Now().Unix()))
+
+	return emu
+}
+
+// Step performs one iteration of the waveform generation
+func (e *Emulator) Step() {
 	f := e.Fnom + e.Fdeviation
 
 	if e.fDeviationRemainingSamples > 0 {
@@ -152,13 +161,13 @@ func (e *Emulator) Step() {
 	}
 
 	if e.V != nil {
-		e.V.StepThreePhase(e.r, f, e.Ts, e.SmpCnt)
+		e.V.stepThreePhase(e.r, f, e.Ts, e.SmpCnt)
 	}
 	if e.I != nil {
-		e.I.StepThreePhase(e.r, f, e.Ts, e.SmpCnt)
+		e.I.stepThreePhase(e.r, f, e.Ts, e.SmpCnt)
 	}
 	if e.T != nil {
-		e.T.StepTemperature(e.r, e.Ts)
+		e.T.stepTemperature(e.r, e.Ts)
 	}
 
 	e.SmpCnt++
@@ -167,13 +176,13 @@ func (e *Emulator) Step() {
 	}
 }
 
-func (t *TemperatureEmulation) StepTemperature(r *rand.Rand, Ts float64) {
+func (t *TemperatureEmulation) stepTemperature(r *rand.Rand, Ts float64) {
 	varyingT := t.MeanTemperature * (1 + t.ModulationMag*math.Cos(1000.0*Ts))
 
 	t.T = varyingT + r.NormFloat64()*t.NoiseMax*t.MeanTemperature
 }
 
-func (e *ThreePhaseEmulation) StepThreePhase(r *rand.Rand, f float64, Ts float64, smpCnt int) {
+func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64, smpCnt int) {
 	angle := (f*2*math.Pi*Ts + e.pAngle)
 	angle = wrapAngle(angle)
 	e.pAngle = angle
