@@ -173,7 +173,6 @@ func (t *TemperatureEmulation) StepTemperature(r *rand.Rand, Ts float64) {
 	varyingT := t.MeanTemperature * (1 + t.ModulationMag*math.Cos(1000.0*Ts))
 
 	if t.AnomalyMagnitude > 0 {
-		rand.Seed(time.Now().Unix())
 		randomValue := rand.Float64()
 		if t.AnomalyProbability > randomValue {
 			varyingT = varyingT + t.AnomalyMagnitude
