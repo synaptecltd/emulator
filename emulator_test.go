@@ -14,6 +14,14 @@ func FloatingPointEqual(expected float64, actual float64, threshold float64) boo
 	return false
 }
 
+func mean(values []float64) float64 {
+	var sum float64
+	for _, value := range values {
+		sum += value
+	}
+	return sum/float64(len(values))
+}
+
 func createEmulator(samplingRate int) *Emulator {
 	return &Emulator{
 		SamplingRate: samplingRate,
@@ -74,6 +82,9 @@ func TestTemperatureEmulatorAnomalies_Amomalies(t *testing.T) {
 		step += 1
 	}
 	assert.Contains(t, results, true)
+
 	fractionAnomalies := float64(len(anomalyValues))/float64(step)
 	assert.True(t, FloatingPointEqual(0.5, fractionAnomalies, 0.1))
+
+	assert.True(t, mean(anomalyValues) > mean(normalValues))
 }
