@@ -66,6 +66,10 @@ type TemperatureEmulation struct {
 	NoiseMax        float64
 	ModulationMag   float64
 
+	AnomalyProbability float64
+	AnomalyMagnitude float64
+	IsAnomaly bool
+
 	T float64
 }
 
@@ -167,6 +171,17 @@ func (e *Emulator) Step() {
 
 func (t *TemperatureEmulation) StepTemperature(r *rand.Rand, Ts float64) {
 	varyingT := t.MeanTemperature * (1 + t.ModulationMag*math.Cos(1000.0*Ts))
+
+	if t.AnomalyMagnitude > 0 {
+		rand.Seed(time.Now().Unix())
+		randomValue := rand.Float64()
+		if t.AnomalyProbability > randomValue {
+			varyingT = varyingT + t.AnomalyMagnitude
+			t.IsAnomaly = true
+		} else {
+			t.IsAnomaly = false
+		}
+	}
 
 	t.T = varyingT + r.NormFloat64()*t.NoiseMax*t.MeanTemperature
 }
