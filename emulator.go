@@ -32,6 +32,8 @@ const MaxEmulatedFrequencyDurationSamples = 8000
 // EmulatedFaultCurrentMagnitude is the additional fault current magnitude added to one circuit end
 const EmulatedFaultCurrentMagnitude = 80
 
+const TwoPiOverThree = 2 * math.Pi / 3
+
 type ThreePhaseEmulation struct {
 	// inputs
 	PosSeqMag       float64
@@ -143,12 +145,21 @@ func (e *Emulator) StartEvent(eventType int) {
 	}
 }
 
-// Step performs one iteration of the waveform generation
-func (e *Emulator) Step() {
-	if e.r == nil {
-		e.r = rand.New(rand.NewSource(time.Now().Unix()))
+func NewEmulator(samplingRate int, frequency float64) *Emulator {
+	emu := &Emulator{
+		SamplingRate: samplingRate,
+		Fnom:         frequency,
+		Fdeviation:   0.0,
+		Ts:           1 / float64(samplingRate),
 	}
 
+	emu.r = rand.New(rand.NewSource(time.Now().Unix()))
+
+	return emu
+}
+
+// Step performs one iteration of the waveform generation
+func (e *Emulator) Step() {
 	f := e.Fnom + e.Fdeviation
 
 	if e.fDeviationRemainingSamples > 0 {
@@ -159,13 +170,13 @@ func (e *Emulator) Step() {
 	}
 
 	if e.V != nil {
-		e.V.StepThreePhase(e.r, f, e.Ts, e.SmpCnt)
+		e.V.stepThreePhase(e.r, f, e.Ts, e.SmpCnt)
 	}
 	if e.I != nil {
-		e.I.StepThreePhase(e.r, f, e.Ts, e.SmpCnt)
+		e.I.stepThreePhase(e.r, f, e.Ts, e.SmpCnt)
 	}
 	if e.T != nil {
-		e.T.StepTemperature(e.r, e.Ts)
+		e.T.stepTemperature(e.r, e.Ts)
 	}
 
 	e.SmpCnt++
@@ -182,7 +193,7 @@ func createTrendMask(length int) []float64 {
 	return mask
 }
 
-func (t *TemperatureEmulation) StepTemperature(r *rand.Rand, Ts float64) {
+func (t *TemperatureEmulation) stepTemperature(r *rand.Rand, Ts float64) {
 	varyingT := t.MeanTemperature * (1 + t.ModulationMag*math.Cos(1000.0*Ts))
 
 	trendAnomalyDelta := 0.0
@@ -208,7 +219,7 @@ func (t *TemperatureEmulation) StepTemperature(r *rand.Rand, Ts float64) {
 	t.T = varyingT + r.NormFloat64()*t.NoiseMax*t.MeanTemperature + trendAnomalyDelta
 }
 
-func (e *ThreePhaseEmulation) StepThreePhase(r *rand.Rand, f float64, Ts float64, smpCnt int) {
+func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64, smpCnt int) {
 	angle := (f*2*math.Pi*Ts + e.pAngle)
 	angle = wrapAngle(angle)
 	e.pAngle = angle
@@ -228,13 +239,13 @@ func (e *ThreePhaseEmulation) StepThreePhase(r *rand.Rand, f float64, Ts float64
 
 	// positive sequence
 	a1 := math.Sin(PosSeqPhase) * posSeqMag
-	b1 := math.Sin(PosSeqPhase-2*math.Pi/3) * posSeqMag
-	c1 := math.Sin(PosSeqPhase+2*math.Pi/3) * posSeqMag
+	b1 := math.Sin(PosSeqPhase-TwoPiOverThree) * posSeqMag
+	c1 := math.Sin(PosSeqPhase+TwoPiOverThree) * posSeqMag
 
 	// negative sequence
 	a2 := math.Sin(PosSeqPhase+e.NegSeqAng) * e.NegSeqMag * e.PosSeqMag
-	b2 := math.Sin(PosSeqPhase+2*math.Pi/3+e.NegSeqAng) * e.NegSeqMag * e.PosSeqMag
-	c2 := math.Sin(PosSeqPhase-2*math.Pi/3+e.NegSeqAng) * e.NegSeqMag * e.PosSeqMag
+	b2 := math.Sin(PosSeqPhase+TwoPiOverThree+e.NegSeqAng) * e.NegSeqMag * e.PosSeqMag
+	c2 := math.Sin(PosSeqPhase-TwoPiOverThree+e.NegSeqAng) * e.NegSeqMag * e.PosSeqMag
 
 	// zero sequence
 	abc0 := math.Sin(PosSeqPhase+e.ZeroSeqAng) * e.ZeroSeqMag
@@ -247,20 +258,22 @@ func (e *ThreePhaseEmulation) StepThreePhase(r *rand.Rand, f float64, Ts float64
 		// ensure consistent array sizes have been specified
 		if len(e.HarmonicNumbers) == len(e.HarmonicMags) && len(e.HarmonicNumbers) == len(e.HarmonicAngs) {
 			for i, n := range e.HarmonicNumbers {
-				mag := e.HarmonicMags[i]
+				mag := e.HarmonicMags[i] * e.PosSeqMag
 				ang := e.HarmonicAngs[i] // / 180.0 * math.Pi
 
-				ah = ah + math.Sin(n*(PosSeqPhase)+ang)*mag*e.PosSeqMag
-				bh = bh + math.Sin(n*(PosSeqPhase-2*math.Pi/3)+ang)*mag*e.PosSeqMag
-				ch = ch + math.Sin(n*(PosSeqPhase+2*math.Pi/3)+ang)*mag*e.PosSeqMag
+				ah = ah + math.Sin(n*(PosSeqPhase)+ang)*mag
+				bh = bh + math.Sin(n*(PosSeqPhase-TwoPiOverThree)+ang)*mag
+				ch = ch + math.Sin(n*(PosSeqPhase+TwoPiOverThree)+ang)*mag
 			}
 		}
 	}
 
+	// add noise, ensure worst case where noise is uncorrelated across phases
 	ra := r.NormFloat64() * e.NoiseMax * e.PosSeqMag
 	rb := r.NormFloat64() * e.NoiseMax * e.PosSeqMag
 	rc := r.NormFloat64() * e.NoiseMax * e.PosSeqMag
 
+	// combine the output for each phase
 	e.A = a1 + a2 + abc0 + ah + ra
 	e.B = b1 + b2 + abc0 + bh + rb
 	e.C = c1 + c2 + abc0 + ch + rc
