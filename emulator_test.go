@@ -48,7 +48,7 @@ func createEmulator(samplingRate int) *Emulator {
 	}
 }
 
-func TestTemperatureEmulatorAnomalies_NoAmomalies(t *testing.T) {
+func TestTemperatureEmulationAnomalies_NoAmomalies(t *testing.T) {
 	emulator := createEmulator(14400)
 
 	emulator.T.AnomalyProbability = 0
@@ -62,7 +62,7 @@ func TestTemperatureEmulatorAnomalies_NoAmomalies(t *testing.T) {
 	assert.NotContains(t, results, true)
 }
 
-func TestTemperatureEmulatorAnomalies_Amomalies(t *testing.T) {
+func TestTemperatureEmulationAnomalies_Amomalies(t *testing.T) {
 	emulator := createEmulator(14400)
 
 	emulator.T.AnomalyProbability = 0.5
@@ -87,4 +87,21 @@ func TestTemperatureEmulatorAnomalies_Amomalies(t *testing.T) {
 	assert.True(t, FloatingPointEqual(0.5, fractionAnomalies, 0.1))
 
 	assert.True(t, mean(anomalyValues) > mean(normalValues))
+}
+
+func TestTemperatureEmulationAnomalies_Trend(t *testing.T) {
+	emulator := createEmulator(14400)
+	emulator.T.TrendAnomaly = true
+	emulator.T.TrendAnomalyFactor = 30.0
+	emulator.T.TrendAnomalyLength = 1E3
+
+	step := 0
+	var results []float64
+	for step < 1E4 {
+		emulator.Step()
+		results = append(results, emulator.T.T)
+		step += 1
+	}
+
+	assert.True(t, mean(results) > emulator.T.MeanTemperature)
 }
