@@ -187,9 +187,9 @@ func (t *TemperatureEmulation) StepTemperature(r *rand.Rand, Ts float64) {
 
 	trendAnomalyDelta := 0.0
 	if t.TrendAnomaly == true {
-		trend := createTrendMask(1E3)
+		trend := createTrendMask(t.TrendAnomalyLength)
 		trendAnomalyDelta = trend[t.TrendAnomalyIndex] * t.TrendAnomalyFactor
-		if t.TrendAnomalyIndex == t.TrendAnomalyLength - 1 {
+		if t.TrendAnomalyIndex == len(trend) - 1 {
 			t.TrendAnomalyIndex = 0
 		} else {
 			t.TrendAnomalyIndex += 1
