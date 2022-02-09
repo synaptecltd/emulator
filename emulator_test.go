@@ -58,7 +58,7 @@ func mean(values []float64) float64 {
 	return sum/float64(len(values))
 }
 
-func TestTemperatureEmulationAnomalies_NoAmomalies(t *testing.T) {
+func TestTemperatureEmulationAnomalies_NoAnomalies(t *testing.T) {
 	emulator := createEmulator(14400, 0)
 
 	emulator.T.InstantaneousAnomalyProbability = 0
@@ -72,7 +72,7 @@ func TestTemperatureEmulationAnomalies_NoAmomalies(t *testing.T) {
 	assert.NotContains(t, results, true)
 }
 
-func TestTemperatureEmulationAnomalies_Amomalies(t *testing.T) {
+func TestTemperatureEmulationAnomalies_Anomalies(t *testing.T) {
 	emulator := createEmulator(14400, 0)
 
 	emulator.T.InstantaneousAnomalyProbability = 0.5

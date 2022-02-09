@@ -187,22 +187,14 @@ func (e *Emulator) Step() {
 	}
 }
 
-func createTrendMask(length int) []float64 {
-	mask := make([]float64, length)
-	for i := range mask {
-		mask[i] = float64(i)/float64(length)
-	}
-	return mask
-}
-
 func (t *TemperatureEmulation) stepTemperature(r *rand.Rand, Ts float64) {
 	varyingT := t.MeanTemperature * (1 + t.ModulationMag*math.Cos(1000.0*Ts))
 
 	trendAnomalyDelta := 0.0
+	trendAnomalyStep := t.TrendAnomalyMagnitude / float64(t.TrendAnomalyLength)
 	if t.IsTrendAnomaly == true {
-		trend := createTrendMask(t.TrendAnomalyLength)
-		trendAnomalyDelta = trend[t.TrendAnomalyIndex] * t.TrendAnomalyMagnitude
-		if t.TrendAnomalyIndex == len(trend) - 1 {
+		trendAnomalyDelta = float64(t.TrendAnomalyIndex) * trendAnomalyStep
+		if t.TrendAnomalyIndex == t.TrendAnomalyLength - 1 {
 			t.TrendAnomalyIndex = 0
 		} else {
 			t.TrendAnomalyIndex += 1
