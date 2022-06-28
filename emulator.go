@@ -69,17 +69,28 @@ type TemperatureEmulation struct {
 	ModulationMag   float64
 
 	// instantaneous anomalies
-	isInstantaneousAnomaly bool // private
+	isInstantaneousAnomaly          bool // private
 	InstantaneousAnomalyProbability float64
-	InstantaneousAnomalyMagnitude float64
+	InstantaneousAnomalyMagnitude   float64
 
 	// trend anomalies
-	IsTrendAnomaly bool
-	TrendAnomalyLength int
-	TrendAnomalyIndex int
+	IsTrendAnomaly        bool
+	TrendAnomalyLength    int
+	TrendAnomalyIndex     int
 	TrendAnomalyMagnitude float64
 
 	T float64
+}
+
+type SagEmulation struct {
+	MeanStrain                float64
+	MeanSag                   float64
+	MeanCalculatedTemperature float64
+
+	// outputs
+	TotalStrain           float64
+	Sag                   float64
+	CalculatedTemperature float64
 }
 
 // Emulator encapsulates the waveform emulation of three-phase voltage, three-phase current, or temperature
@@ -93,7 +104,8 @@ type Emulator struct {
 	V *ThreePhaseEmulation
 	I *ThreePhaseEmulation
 
-	T *TemperatureEmulation
+	T   *TemperatureEmulation
+	Sag *SagEmulation
 
 	// common state
 	SmpCnt                     int
@@ -180,6 +192,9 @@ func (e *Emulator) Step() {
 	if e.T != nil {
 		e.T.stepTemperature(e.r, e.Ts)
 	}
+	if e.Sag != nil {
+		e.Sag.stepSag(e.r)
+	}
 
 	e.SmpCnt++
 	if int(e.SmpCnt) >= e.SamplingRate {
@@ -194,7 +209,7 @@ func (t *TemperatureEmulation) stepTemperature(r *rand.Rand, Ts float64) {
 	trendAnomalyStep := t.TrendAnomalyMagnitude / float64(t.TrendAnomalyLength)
 	if t.IsTrendAnomaly == true {
 		trendAnomalyDelta = float64(t.TrendAnomalyIndex) * trendAnomalyStep
-		if t.TrendAnomalyIndex == t.TrendAnomalyLength - 1 {
+		if t.TrendAnomalyIndex == t.TrendAnomalyLength-1 {
 			t.TrendAnomalyIndex = 0
 		} else {
 			t.TrendAnomalyIndex += 1
@@ -271,4 +286,11 @@ func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64
 	e.A = a1 + a2 + abc0 + ah + ra
 	e.B = b1 + b2 + abc0 + bh + rb
 	e.C = c1 + c2 + abc0 + ch + rc
+}
+
+func (e *SagEmulation) stepSag(r *rand.Rand) {
+	r.Seed(time.Now().UnixNano())
+	e.TotalStrain = e.MeanStrain * r.Float64()
+	e.Sag = e.MeanSag * r.Float64()
+	e.CalculatedTemperature = e.MeanCalculatedTemperature * r.Float64()
 }
