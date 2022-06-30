@@ -17,7 +17,6 @@ func BenchmarkEmulator(b *testing.B) {
 	}
 }
 
-
 func createEmulatorForBenchmark(samplingRate int, phaseOffsetDeg float64) *Emulator {
 	emu := NewEmulator(samplingRate, 50.0)
 
@@ -55,15 +54,13 @@ func createEmulator(samplingRate int, phaseOffsetDeg float64) *Emulator {
 		NoiseMax:        0.000001,
 	}
 	emu.T = &TemperatureEmulation{
-		MeanTemperature: 30.0,
-		NoiseMax: 0.01,
-		InstantaneousAnomalyMagnitude: 30,
+		MeanTemperature:                 30.0,
+		NoiseMax:                        0.01,
+		InstantaneousAnomalyMagnitude:   30,
 		InstantaneousAnomalyProbability: 0.01,
 	}
 	return emu
 }
-
-
 
 func FloatingPointEqual(expected float64, actual float64, threshold float64) bool {
 	absDiff := math.Abs(expected - actual)
@@ -78,7 +75,7 @@ func mean(values []float64) float64 {
 	for _, value := range values {
 		sum += value
 	}
-	return sum/float64(len(values))
+	return sum / float64(len(values))
 }
 
 func TestTemperatureEmulationAnomalies_NoAnomalies(t *testing.T) {
@@ -87,7 +84,7 @@ func TestTemperatureEmulationAnomalies_NoAnomalies(t *testing.T) {
 	emulator.T.InstantaneousAnomalyProbability = 0
 	step := 0
 	var results []bool
-	for step < 1E4 {
+	for step < 1e4 {
 		emulator.Step()
 		results = append(results, emulator.T.isInstantaneousAnomaly)
 		step += 1
@@ -103,7 +100,7 @@ func TestTemperatureEmulationAnomalies_Anomalies(t *testing.T) {
 	var results []bool
 	var normalValues []float64
 	var anomalyValues []float64
-	for step < 1E4 {
+	for step < 1e4 {
 		emulator.Step()
 		results = append(results, emulator.T.isInstantaneousAnomaly)
 
@@ -116,7 +113,7 @@ func TestTemperatureEmulationAnomalies_Anomalies(t *testing.T) {
 	}
 	assert.Contains(t, results, true)
 
-	fractionAnomalies := float64(len(anomalyValues))/float64(step)
+	fractionAnomalies := float64(len(anomalyValues)) / float64(step)
 	assert.True(t, FloatingPointEqual(0.5, fractionAnomalies, 0.1))
 
 	assert.True(t, mean(anomalyValues) > mean(normalValues))
@@ -126,15 +123,42 @@ func TestTemperatureEmulationAnomalies_Trend(t *testing.T) {
 	emulator := createEmulator(14400, 0)
 	emulator.T.IsTrendAnomaly = true
 	emulator.T.TrendAnomalyMagnitude = 30.0
-	emulator.T.TrendAnomalyLength = 1E3
+	emulator.T.TrendAnomalyLength = 1e3
 
 	step := 0
 	var results []float64
-	for step < 1E4 {
+	for step < 1e4 {
 		emulator.Step()
 		results = append(results, emulator.T.T)
 		step += 1
 	}
 
 	assert.True(t, mean(results) > emulator.T.MeanTemperature)
+}
+
+func TestSagEmulation(t *testing.T) {
+	emulator := createEmulator(14400, 0)
+	emulator.Sag = &SagEmulation{
+		MeanCalculatedTemperature: 30.0,
+		MeanStrain:                100.0,
+		MeanSag:                   0.5,
+	}
+
+	step := 0
+	results := make(map[string][]float64)
+	results["CalculatedTemperature"] = make([]float64, 0)
+	results["TotalStrain"] = make([]float64, 0)
+	results["Sag"] = make([]float64, 0)
+
+	for step < 1e4 {
+		emulator.Step()
+		results["CalculatedTemperature"] = append(results["CalculatedTemperature"], emulator.Sag.CalculatedTemperature)
+		results["TotalStrain"] = append(results["TotalStrain"], emulator.Sag.CalculatedTemperature)
+		results["Sag"] = append(results["Sag"], emulator.Sag.CalculatedTemperature)
+		step += 1
+	}
+
+	for _, field := range []string{"CalculatedTemperature", "TotalStrain", "Sag"} {
+		assert.IsType(t, []float64{}, results[field])
+	}
 }
