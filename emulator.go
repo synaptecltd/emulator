@@ -214,6 +214,13 @@ func (t *TemperatureEmulation) stepTemperature(r *rand.Rand, Ts float64) {
 		} else {
 			t.TrendAnomalyIndex += 1
 		}
+	} else {
+		trendAnomalyDelta = float64(t.TrendAnomalyIndex) * trendAnomalyStep
+		if t.TrendAnomalyIndex == t.TrendAnomalyLength-1 {
+			t.TrendAnomalyIndex = 0
+		} else {
+			t.TrendAnomalyIndex -= 1
+		}
 	}
 
 	instantaneousAnomalyDelta := 0.0
@@ -227,6 +234,10 @@ func (t *TemperatureEmulation) stepTemperature(r *rand.Rand, Ts float64) {
 
 	t.T = varyingT + r.NormFloat64()*t.NoiseMax*t.MeanTemperature + totalAnomalyDelta
 }
+
+// func biDirectionalTrendAnomalyTemperature() {
+
+// }
 
 func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64, smpCnt int) {
 	angle := (f*2*math.Pi*Ts + e.pAngle)
