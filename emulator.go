@@ -1,6 +1,7 @@
 package emulator
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
 	"time"
@@ -203,8 +204,8 @@ func (e *Emulator) Step() {
 }
 
 func (t *TemperatureEmulation) stepTemperature(r *rand.Rand, Ts float64) {
-	varyingT := t.MeanTemperature * (1 + t.ModulationMag*math.Cos(1000.0*Ts))
-
+	// varyingT := t.MeanTemperature * (1 + t.ModulationMag*math.Cos(1000.0*Ts))
+	varyingT := 1.0
 	trendAnomalyDelta := 0.0
 	trendAnomalyStep := t.TrendAnomalyMagnitude / float64(t.TrendAnomalyLength)
 
@@ -225,8 +226,9 @@ func (t *TemperatureEmulation) stepTemperature(r *rand.Rand, Ts float64) {
 	}
 
 	totalAnomalyDelta := trendAnomalyDelta + instantaneousAnomalyDelta
-
-	t.T = varyingT - r.NormFloat64()*t.NoiseMax*t.MeanTemperature - totalAnomalyDelta
+	fmt.Println(totalAnomalyDelta)
+	//t.T = varyingT + r.NormFloat64()*t.NoiseMax*t.MeanTemperature + totalAnomalyDelta
+	t.T = varyingT
 }
 
 // func biDirectionalTrendAnomalyTemperature() {
