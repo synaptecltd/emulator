@@ -249,8 +249,11 @@ func (t *TemperatureEmulation) stepTemperature(r *rand.Rand, Ts float64) {
 		}
 
 	}
+	fmt.Println("-----------------------------------")
 	fmt.Println("TEST_C:", t.IsTrendAnomaly)
 	fmt.Println("trendAnomalyDelta:", trendAnomalyDelta)
+	fmt.Println("TrendAnomalyLength", t.TrendAnomalyLength)
+	fmt.Println("trendAnomalyStep", trendAnomalyStep)
 
 	instantaneousAnomalyDelta := 0.0
 	t.isInstantaneousAnomaly = false
