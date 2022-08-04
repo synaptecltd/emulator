@@ -1,9 +1,10 @@
 package emulator
 
 import (
-	"github.com/stretchr/testify/assert"
 	"math"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // benchmark emulator performance
@@ -134,6 +135,23 @@ func TestTemperatureEmulationAnomalies_Trend(t *testing.T) {
 	}
 
 	assert.True(t, mean(results) > emulator.T.MeanTemperature)
+}
+
+func TestTemperatureEmulationAnomalies_Decrease_Trend(t *testing.T) {
+	emulator := createEmulator(14400, 0)
+	emulator.T.IsTrendAnomaly = true
+	emulator.T.TrendAnomalyMagnitude = 30.0
+	emulator.T.TrendAnomalyLength = 1e3
+	emulator.T.IsRisingTrendAnomaly = false
+	step := 0
+	var results []float64
+	for step < 1e4 {
+		emulator.Step()
+		results = append(results, emulator.T.T)
+		step += 1
+	}
+
+	assert.True(t, mean(results) < emulator.T.MeanTemperature)
 }
 
 func TestSagEmulation(t *testing.T) {
