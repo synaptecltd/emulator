@@ -241,7 +241,7 @@ func (t *TemperatureEmulation) stepTemperature(r *rand.Rand, Ts float64) {
 		}
 	} else {
 
-		trendAnomalyDelta = float64(t.TrendAnomalyIndex) * trendAnomalyStep * float64(-1.0)
+		trendAnomalyDelta = float64(t.TrendAnomalyIndex) * trendAnomalyStep * (-1.0)
 		if t.TrendAnomalyIndex == t.TrendAnomalyLength-1 {
 			t.TrendAnomalyIndex = 0
 		} else {
@@ -250,6 +250,7 @@ func (t *TemperatureEmulation) stepTemperature(r *rand.Rand, Ts float64) {
 
 	}
 	fmt.Println("TEST_C:", t.IsTrendAnomaly)
+	fmt.Println("trendAnomalyDelta:", trendAnomalyDelta)
 
 	instantaneousAnomalyDelta := 0.0
 	t.isInstantaneousAnomaly = false
@@ -260,7 +261,7 @@ func (t *TemperatureEmulation) stepTemperature(r *rand.Rand, Ts float64) {
 
 	if t.IsTrendAnomaly == false && t.isInstantaneousAnomaly == true {
 		fmt.Println("TEST_D:", true)
-		instantaneousAnomalyDelta *= float64(-1.0)
+		instantaneousAnomalyDelta *= (-1.0)
 	}
 
 	totalAnomalyDelta := trendAnomalyDelta + instantaneousAnomalyDelta
