@@ -259,11 +259,12 @@ func (t *TemperatureEmulation) stepTemperature(r *rand.Rand, Ts float64) {
 	}
 
 	if t.IsTrendAnomaly == false && t.isInstantaneousAnomaly == true {
+		fmt.Println("TEST_D:", true)
 		instantaneousAnomalyDelta *= -1.0
 	}
 
 	totalAnomalyDelta := trendAnomalyDelta + instantaneousAnomalyDelta
-
+	fmt.Println("Total_Delta:", totalAnomalyDelta)
 	t.T = varyingT + r.NormFloat64()*t.NoiseMax*t.MeanTemperature + totalAnomalyDelta
 	// t.T = varyingT
 }
