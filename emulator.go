@@ -80,6 +80,8 @@ type TemperatureEmulation struct {
 	TrendAnomalyIndex     int
 	TrendAnomalyMagnitude float64
 
+	IsRisingTrendAnomaly bool
+
 	T float64
 }
 
@@ -231,7 +233,15 @@ func (t *TemperatureEmulation) stepTemperature(r *rand.Rand, Ts float64) {
 	trendAnomalyDelta := 0.0
 	trendAnomalyStep := t.TrendAnomalyMagnitude / float64(t.TrendAnomalyLength)
 
+	//trendFlag := true
+
 	if t.IsTrendAnomaly == true {
+
+		if t.IsRisingTrendAnomaly {
+			trendAnomalyDelta = float64(t.TrendAnomalyIndex) * trendAnomalyStep
+		} else {
+			trendAnomalyDelta = float64(t.TrendAnomalyIndex) * trendAnomalyStep * (-1.0)
+		}
 
 		trendAnomalyDelta = float64(t.TrendAnomalyIndex) * trendAnomalyStep
 		if t.TrendAnomalyIndex == t.TrendAnomalyLength-1 {
@@ -239,16 +249,18 @@ func (t *TemperatureEmulation) stepTemperature(r *rand.Rand, Ts float64) {
 		} else {
 			t.TrendAnomalyIndex += 1
 		}
-	} else {
-		if t.TrendAnomalyLength != 0 {
-			trendAnomalyDelta = float64(t.TrendAnomalyIndex) * trendAnomalyStep * (-1.0)
-			if t.TrendAnomalyIndex == t.TrendAnomalyLength-1 {
-				t.TrendAnomalyIndex = 0
-			} else {
-				t.TrendAnomalyIndex += 1
-			}
-		}
 	}
+
+	// else {
+	// 	if t.TrendAnomalyLength != 0 {
+	// 		trendAnomalyDelta = float64(t.TrendAnomalyIndex) * trendAnomalyStep * (-1.0)
+	// 		if t.TrendAnomalyIndex == t.TrendAnomalyLength-1 {
+	// 			t.TrendAnomalyIndex = 0
+	// 		} else {
+	// 			t.TrendAnomalyIndex += 1
+	// 		}
+	// 	}
+	// }
 	fmt.Println("-----------------------------------")
 	fmt.Println("TEST_C:", t.IsTrendAnomaly)
 	fmt.Println("trendAnomalyDelta:", trendAnomalyDelta)
@@ -262,10 +274,10 @@ func (t *TemperatureEmulation) stepTemperature(r *rand.Rand, Ts float64) {
 		t.isInstantaneousAnomaly = true
 	}
 
-	if t.IsTrendAnomaly == false && t.isInstantaneousAnomaly == true {
-		fmt.Println("TEST_D:", true)
-		instantaneousAnomalyDelta *= (-1.0)
-	}
+	// if t.IsTrendAnomaly == false && t.isInstantaneousAnomaly == true {
+	// 	fmt.Println("TEST_D:", true)
+	// 	instantaneousAnomalyDelta *= (-1.0)
+	// }
 
 	totalAnomalyDelta := trendAnomalyDelta + instantaneousAnomalyDelta
 
