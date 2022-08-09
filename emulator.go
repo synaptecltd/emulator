@@ -79,6 +79,8 @@ type TemperatureEmulation struct {
 	TrendAnomalyIndex     int
 	TrendAnomalyMagnitude float64
 
+	IsRisingTrendAnomaly bool
+
 	T float64
 }
 
@@ -207,8 +209,15 @@ func (t *TemperatureEmulation) stepTemperature(r *rand.Rand, Ts float64) {
 
 	trendAnomalyDelta := 0.0
 	trendAnomalyStep := t.TrendAnomalyMagnitude / float64(t.TrendAnomalyLength)
+
 	if t.IsTrendAnomaly == true {
-		trendAnomalyDelta = float64(t.TrendAnomalyIndex) * trendAnomalyStep
+
+		if t.IsRisingTrendAnomaly == true {
+			trendAnomalyDelta = float64(t.TrendAnomalyIndex) * trendAnomalyStep
+		} else {
+			trendAnomalyDelta = float64(t.TrendAnomalyIndex) * trendAnomalyStep * (-1.0)
+		}
+
 		if t.TrendAnomalyIndex == t.TrendAnomalyLength-1 {
 			t.TrendAnomalyIndex = 0
 		} else {
@@ -226,6 +235,7 @@ func (t *TemperatureEmulation) stepTemperature(r *rand.Rand, Ts float64) {
 	totalAnomalyDelta := trendAnomalyDelta + instantaneousAnomalyDelta
 
 	t.T = varyingT + r.NormFloat64()*t.NoiseMax*t.MeanTemperature + totalAnomalyDelta
+
 }
 
 func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64, smpCnt int) {
