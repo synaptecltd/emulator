@@ -125,7 +125,7 @@ func TestTemperatureEmulationAnomalies_Trend(t *testing.T) {
 	emulator.T.IsTrendAnomaly = true
 	emulator.T.TrendAnomalyMagnitude = 30.0
 	emulator.T.TrendAnomalyLength = 1e3
-
+	emulator.T.IsRisingTrendAnomaly = true
 	step := 0
 	var results []float64
 	for step < 1e4 {
