@@ -212,7 +212,6 @@ func (t *TemperatureEmulation) stepTemperature(r *rand.Rand, Ts float64) {
 
 	if t.IsTrendAnomaly == true {
 
-		// IsRisingTrendAnomaly to check whether the it is a rising trend anomaly or not.
 		if t.IsRisingTrendAnomaly == true {
 			trendAnomalyDelta = float64(t.TrendAnomalyIndex) * trendAnomalyStep
 		} else {
@@ -235,7 +234,6 @@ func (t *TemperatureEmulation) stepTemperature(r *rand.Rand, Ts float64) {
 
 	totalAnomalyDelta := trendAnomalyDelta + instantaneousAnomalyDelta
 
-	//fmt.Println("Total_Delta:", totalAnomalyDelta)
 	t.T = varyingT + r.NormFloat64()*t.NoiseMax*t.MeanTemperature + totalAnomalyDelta
 
 }

@@ -145,13 +145,13 @@ func TestTemperatureEmulationAnomalies_Decrease_Trend(t *testing.T) {
 	emulator.T.IsRisingTrendAnomaly = false
 	step := 0
 	var results []float64
-	for step < 1e4 {
+	for step < 1e10 {
 		emulator.Step()
 		results = append(results, emulator.T.T)
 		step += 1
 	}
 
-	assert.True(t, mean(results) < emulator.T.MeanTemperature)
+	assert.True(t, math.Abs(mean(results)-emulator.T.MeanTemperature) > 20)
 }
 
 func TestSagEmulation(t *testing.T) {
