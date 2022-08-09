@@ -74,7 +74,8 @@ type TemperatureEmulation struct {
 	InstantaneousAnomalyMagnitude   float64
 
 	// trend anomalies
-	IsTrendAnomaly        bool
+	IsTrendAnomaly bool
+	//TODO replace to timestamps for duration instead of steps
 	TrendAnomalyLength    int
 	TrendAnomalyIndex     int
 	TrendAnomalyMagnitude float64
