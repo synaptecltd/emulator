@@ -80,7 +80,10 @@ type TemperatureEmulation struct {
 	TrendAnomalyIndex     int
 	TrendAnomalyMagnitude float64
 
-	IsRisingTrendAnomaly bool
+	TrendAnomalyTimeStart    int64
+	TrendAnomalyTimeCurrent  int64
+	TrendAnomalyTimeDuration int64
+	IsRisingTrendAnomaly     bool
 
 	T float64
 }
