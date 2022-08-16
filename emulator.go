@@ -211,8 +211,9 @@ func (e *Emulator) Step() {
 }
 
 // Step performs one iteration of the waveform generation
-func (e *Emulator) Time_base_duration_loop(startTime int64, duration int64) {
+func (e *Emulator) Time_base_duration_loop(startTime int64, duration int64) []float64 {
 	var currentTime int64
+	var results []float64
 	for continue_flag := true; continue_flag; continue_flag = (currentTime - startTime) < duration {
 
 		currentTime = time.Now().Unix()
@@ -242,9 +243,9 @@ func (e *Emulator) Time_base_duration_loop(startTime int64, duration int64) {
 		if int(e.SmpCnt) >= e.SamplingRate {
 			e.SmpCnt = 0
 		}
-
+		results = append(results, e.T.T)
 	}
-
+	return results
 }
 
 func (t *TemperatureEmulation) stepTemperature(r *rand.Rand, Ts float64) {
