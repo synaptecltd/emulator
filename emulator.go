@@ -195,7 +195,10 @@ func (e *Emulator) Step() {
 		e.I.stepThreePhase(e.r, f, e.Ts, e.SmpCnt)
 	}
 	if e.T != nil {
-		e.T.stepTemperature(e.r, e.Ts)
+		e.T.TrendAnomalyTimeCurrent = time.Now().Unix()
+		if (e.T.TrendAnomalyTimeCurrent - e.T.TrendAnomalyTimeStart) < e.T.TrendAnomalyTimeDuration {
+			e.T.stepTemperature(e.r, e.Ts)
+		}
 	}
 	if e.Sag != nil {
 		e.Sag.stepSag(e.r)

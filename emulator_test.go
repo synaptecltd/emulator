@@ -60,6 +60,8 @@ func createEmulator(samplingRate int, phaseOffsetDeg float64) *Emulator {
 		NoiseMax:                        0.01,
 		InstantaneousAnomalyMagnitude:   30,
 		InstantaneousAnomalyProbability: 0.01,
+		TrendAnomalyTimeStart:           time.Now().Unix(),
+		TrendAnomalyTimeDuration:        20,
 	}
 	return emu
 }
