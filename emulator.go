@@ -210,6 +210,43 @@ func (e *Emulator) Step() {
 	}
 }
 
+// Step performs one iteration of the waveform generation
+func (e *Emulator) Time_base_duration_loop(startTime int64, duration int64) {
+	var currentTime int64
+	for continue_flag := true; continue_flag; continue_flag = (currentTime - startTime) < duration {
+
+		currentTime = time.Now().Unix()
+		f := e.Fnom + e.Fdeviation
+
+		if e.fDeviationRemainingSamples > 0 {
+			e.fDeviationRemainingSamples--
+			if e.fDeviationRemainingSamples == 0 {
+				e.Fdeviation = 0.0
+			}
+		}
+
+		if e.V != nil {
+			e.V.stepThreePhase(e.r, f, e.Ts, e.SmpCnt)
+		}
+		if e.I != nil {
+			e.I.stepThreePhase(e.r, f, e.Ts, e.SmpCnt)
+		}
+		if e.T != nil {
+			e.T.stepTemperature(e.r, e.Ts)
+		}
+		if e.Sag != nil {
+			e.Sag.stepSag(e.r)
+		}
+
+		e.SmpCnt++
+		if int(e.SmpCnt) >= e.SamplingRate {
+			e.SmpCnt = 0
+		}
+
+	}
+
+}
+
 func (t *TemperatureEmulation) stepTemperature(r *rand.Rand, Ts float64) {
 	varyingT := t.MeanTemperature * (1 + t.ModulationMag*math.Cos(1000.0*Ts))
 
