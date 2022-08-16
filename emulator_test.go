@@ -151,7 +151,7 @@ func TestTemperatureEmulationAnomalies_Trend_Time_Duration(t *testing.T) {
 	emulator.T.TrendAnomalyTimeDuration = 20
 
 	var results []float64
-	for continue_flag := true; continue_flag; continue_flag = (emulator.T.TrendAnomalyTimeCurrent - emulator.T.TrendAnomalyTimeStart) < emulator.T.TrendAnomalyTimeDuration {
+	for continueFlag := true; continueFlag; continueFlag = (emulator.T.TrendAnomalyTimeCurrent - emulator.T.TrendAnomalyTimeStart) < emulator.T.TrendAnomalyTimeDuration {
 		emulator.Step()
 		results = append(results, emulator.T.T)
 		emulator.T.TrendAnomalyTimeCurrent = time.Now().Unix()
@@ -172,7 +172,7 @@ func TestTemperatureEmulationAnomalies_Trend_Time_Duration_Test_B(t *testing.T) 
 	emulator.T.TrendAnomalyTimeDuration = 20
 
 	var results []float64
-	for continue_flag := true; continue_flag; continue_flag = (emulator.T.TrendAnomalyTimeCurrent - emulator.T.TrendAnomalyTimeStart) < emulator.T.TrendAnomalyTimeDuration {
+	for continueFlag := true; continueFlag; continueFlag = (emulator.T.TrendAnomalyTimeCurrent - emulator.T.TrendAnomalyTimeStart) < emulator.T.TrendAnomalyTimeDuration {
 		emulator.Step()
 		results = append(results, emulator.T.T)
 		emulator.T.TrendAnomalyTimeCurrent = time.Now().Unix()
