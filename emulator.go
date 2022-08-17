@@ -75,14 +75,14 @@ type TemperatureEmulation struct {
 
 	// trend anomalies
 	IsTrendAnomaly        bool
-	TrendAnomalyLength    int
+	TrendAnomalyDuration  int
 	TrendAnomalyIndex     int
 	TrendAnomalyMagnitude float64
 
-	TrendAnomalyTimeStart    int64
-	TrendAnomalyTimeCurrent  int64
-	TrendAnomalyTimeDuration int64
-	IsRisingTrendAnomaly     bool
+	// TrendAnomalyTimeStart    int64
+	// TrendAnomalyTimeCurrent  int64
+	// TrendAnomalyTimeDuration int64
+	IsRisingTrendAnomaly bool
 
 	T float64
 }
@@ -195,10 +195,12 @@ func (e *Emulator) Step() {
 		e.I.stepThreePhase(e.r, f, e.Ts, e.SmpCnt)
 	}
 	if e.T != nil {
-		e.T.TrendAnomalyTimeCurrent = time.Now().Unix()
-		if (e.T.TrendAnomalyTimeCurrent - e.T.TrendAnomalyTimeStart) < e.T.TrendAnomalyTimeDuration {
-			e.T.stepTemperature(e.r, e.Ts)
-		}
+		// e.T.TrendAnomalyTimeCurrent = time.Now().Unix()
+		// if (e.T.TrendAnomalyTimeCurrent - e.T.TrendAnomalyTimeStart) < e.T.TrendAnomalyTimeDuration {
+
+		// }
+
+		e.T.stepTemperature(e.r, e.Ts)
 	}
 	if e.Sag != nil {
 		e.Sag.stepSag(e.r)
@@ -210,49 +212,51 @@ func (e *Emulator) Step() {
 	}
 }
 
-// Step performs one iteration of the waveform generation
-func (e *Emulator) Time_base_duration_loop(startTime int64, duration int64) []float64 {
-	var currentTime int64
-	var results []float64
-	for continue_flag := true; continue_flag; continue_flag = (currentTime - startTime) < duration {
+// // Step performs one iteration of the waveform generation
+// func (e *Emulator) Time_base_duration_loop(startTime int64, duration int64) []float64 {
+// 	var currentTime int64
+// 	var results []float64
+// 	for continue_flag := true; continue_flag; continue_flag = (currentTime - startTime) < duration {
 
-		currentTime = time.Now().Unix()
-		f := e.Fnom + e.Fdeviation
+// 		currentTime = time.Now().Unix()
+// 		f := e.Fnom + e.Fdeviation
 
-		if e.fDeviationRemainingSamples > 0 {
-			e.fDeviationRemainingSamples--
-			if e.fDeviationRemainingSamples == 0 {
-				e.Fdeviation = 0.0
-			}
-		}
+// 		if e.fDeviationRemainingSamples > 0 {
+// 			e.fDeviationRemainingSamples--
+// 			if e.fDeviationRemainingSamples == 0 {
+// 				e.Fdeviation = 0.0
+// 			}
+// 		}
 
-		if e.V != nil {
-			e.V.stepThreePhase(e.r, f, e.Ts, e.SmpCnt)
-		}
-		if e.I != nil {
-			e.I.stepThreePhase(e.r, f, e.Ts, e.SmpCnt)
-		}
-		if e.T != nil {
-			e.T.stepTemperature(e.r, e.Ts)
-		}
-		if e.Sag != nil {
-			e.Sag.stepSag(e.r)
-		}
+// 		if e.V != nil {
+// 			e.V.stepThreePhase(e.r, f, e.Ts, e.SmpCnt)
+// 		}
+// 		if e.I != nil {
+// 			e.I.stepThreePhase(e.r, f, e.Ts, e.SmpCnt)
+// 		}
+// 		if e.T != nil {
+// 			e.T.stepTemperature(e.r, e.Ts)
+// 		}
+// 		if e.Sag != nil {
+// 			e.Sag.stepSag(e.r)
+// 		}
 
-		e.SmpCnt++
-		if int(e.SmpCnt) >= e.SamplingRate {
-			e.SmpCnt = 0
-		}
-		results = append(results, e.T.T)
-	}
-	return results
-}
+// 		e.SmpCnt++
+// 		if int(e.SmpCnt) >= e.SamplingRate {
+// 			e.SmpCnt = 0
+// 		}
+// 		results = append(results, e.T.T)
+// 	}
+// 	return results
+// }
 
 func (t *TemperatureEmulation) stepTemperature(r *rand.Rand, Ts float64) {
 	varyingT := t.MeanTemperature * (1 + t.ModulationMag*math.Cos(1000.0*Ts))
 
 	trendAnomalyDelta := 0.0
-	trendAnomalyStep := t.TrendAnomalyMagnitude / float64(t.TrendAnomalyLength)
+
+	// was thinking to times the frequency in here for the anomaly steps
+	trendAnomalyStep := (t.TrendAnomalyMagnitude * 1 / float64(t.TrendAnomalyDuration)) * 1 / Ts
 
 	if t.IsTrendAnomaly == true {
 
@@ -262,7 +266,8 @@ func (t *TemperatureEmulation) stepTemperature(r *rand.Rand, Ts float64) {
 			trendAnomalyDelta = float64(t.TrendAnomalyIndex) * trendAnomalyStep * (-1.0)
 		}
 
-		if t.TrendAnomalyIndex == t.TrendAnomalyLength-1 {
+		// getting the amount of total steps and check the current index value
+		if t.TrendAnomalyIndex == int(float64(t.TrendAnomalyDuration)*1/Ts)-1 {
 			t.TrendAnomalyIndex = 0
 		} else {
 			t.TrendAnomalyIndex += 1

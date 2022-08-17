@@ -1,9 +1,9 @@
 package emulator
 
 import (
+	"fmt"
 	"math"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -60,8 +60,8 @@ func createEmulator(samplingRate int, phaseOffsetDeg float64) *Emulator {
 		NoiseMax:                        0.01,
 		InstantaneousAnomalyMagnitude:   30,
 		InstantaneousAnomalyProbability: 0.01,
-		TrendAnomalyTimeStart:           time.Now().Unix(),
-		TrendAnomalyTimeDuration:        20,
+		// TrendAnomalyTimeStart:           time.Now().Unix(),
+		// TrendAnomalyTimeDuration:        20,
 	}
 	return emu
 }
@@ -124,68 +124,71 @@ func TestTemperatureEmulationAnomalies_Anomalies(t *testing.T) {
 }
 
 func TestTemperatureEmulationAnomalies_Trend(t *testing.T) {
-	emulator := createEmulator(14400, 0)
+	emulator := createEmulator(100, 0)
 	emulator.T.IsTrendAnomaly = true
 	emulator.T.TrendAnomalyMagnitude = 30.0
-	emulator.T.TrendAnomalyLength = 1e3
+	emulator.T.TrendAnomalyDuration = 10
 	emulator.T.IsRisingTrendAnomaly = true
+
 	step := 0
 	var results []float64
-	for step < 1e4 {
+	//duration times frequency equals total steps?
+	for step < emulator.T.TrendAnomalyDuration*emulator.SamplingRate {
 		emulator.Step()
 		results = append(results, emulator.T.T)
 		step += 1
 	}
+	fmt.Println(step)
 
 	assert.True(t, mean(results) > emulator.T.MeanTemperature)
 }
 
-func TestTemperatureEmulationAnomalies_Trend_Time_Duration(t *testing.T) {
-	emulator := createEmulator(14400, 0)
-	emulator.T.IsTrendAnomaly = true
-	emulator.T.TrendAnomalyMagnitude = 30.0
-	emulator.T.TrendAnomalyLength = 1e3
-	emulator.T.IsRisingTrendAnomaly = true
+// func TestTemperatureEmulationAnomalies_Trend_Time_Duration(t *testing.T) {
+// 	emulator := createEmulator(14400, 0)
+// 	emulator.T.IsTrendAnomaly = true
+// 	emulator.T.TrendAnomalyMagnitude = 30.0
+// 	emulator.T.TrendAnomalyLength = 1e3
+// 	emulator.T.IsRisingTrendAnomaly = true
 
-	emulator.T.TrendAnomalyTimeStart = time.Now().Unix()
-	emulator.T.TrendAnomalyTimeDuration = 20
+// 	emulator.T.TrendAnomalyTimeStart = time.Now().Unix()
+// 	emulator.T.TrendAnomalyTimeDuration = 20
 
-	var results []float64
-	for continueFlag := true; continueFlag; continueFlag = (emulator.T.TrendAnomalyTimeCurrent - emulator.T.TrendAnomalyTimeStart) < emulator.T.TrendAnomalyTimeDuration {
-		emulator.Step()
-		results = append(results, emulator.T.T)
-		emulator.T.TrendAnomalyTimeCurrent = time.Now().Unix()
-	}
+// 	var results []float64
+// 	for continueFlag := true; continueFlag; continueFlag = (emulator.T.TrendAnomalyTimeCurrent - emulator.T.TrendAnomalyTimeStart) < emulator.T.TrendAnomalyTimeDuration {
+// 		emulator.Step()
+// 		results = append(results, emulator.T.T)
+// 		emulator.T.TrendAnomalyTimeCurrent = time.Now().Unix()
+// 	}
 
-	assert.True(t, mean(results) > emulator.T.MeanTemperature)
-}
+// 	assert.True(t, mean(results) > emulator.T.MeanTemperature)
+// }
 
 //TODO unit test for the new time duration loop
-func TestTemperatureEmulationAnomalies_Trend_Time_Duration_Test_B(t *testing.T) {
-	emulator := createEmulator(14400, 0)
-	emulator.T.IsTrendAnomaly = true
-	emulator.T.TrendAnomalyMagnitude = 30.0
-	emulator.T.TrendAnomalyLength = 1e3
-	emulator.T.IsRisingTrendAnomaly = true
+// func TestTemperatureEmulationAnomalies_Trend_Time_Duration_Test_B(t *testing.T) {
+// 	emulator := createEmulator(14400, 0)
+// 	emulator.T.IsTrendAnomaly = true
+// 	emulator.T.TrendAnomalyMagnitude = 30.0
+// 	emulator.T.TrendAnomalyLength = 1e3
+// 	emulator.T.IsRisingTrendAnomaly = true
 
-	emulator.T.TrendAnomalyTimeStart = time.Now().Unix()
-	emulator.T.TrendAnomalyTimeDuration = 20
+// 	emulator.T.TrendAnomalyTimeStart = time.Now().Unix()
+// 	emulator.T.TrendAnomalyTimeDuration = 20
 
-	var results []float64
-	results = emulator.Time_base_duration_loop(emulator.T.TrendAnomalyTimeStart, emulator.T.TrendAnomalyTimeDuration)
+// 	var results []float64
+// 	results = emulator.Time_base_duration_loop(emulator.T.TrendAnomalyTimeStart, emulator.T.TrendAnomalyTimeDuration)
 
-	assert.True(t, mean(results) > emulator.T.MeanTemperature)
-}
+// 	assert.True(t, mean(results) > emulator.T.MeanTemperature)
+// }
 
 func TestTemperatureEmulationAnomalies_Decrease_Trend(t *testing.T) {
-	emulator := createEmulator(14400, 0)
+	emulator := createEmulator(1, 0)
 	emulator.T.IsTrendAnomaly = true
 	emulator.T.TrendAnomalyMagnitude = 30.0
-	emulator.T.TrendAnomalyLength = 1e3
+	emulator.T.TrendAnomalyDuration = 10
 	emulator.T.IsRisingTrendAnomaly = false
 	step := 0
 	var results []float64
-	for step < 1e4 {
+	for step < 10 {
 		emulator.Step()
 		results = append(results, emulator.T.T)
 		step += 1
@@ -194,41 +197,41 @@ func TestTemperatureEmulationAnomalies_Decrease_Trend(t *testing.T) {
 	assert.True(t, mean(results) < emulator.T.MeanTemperature)
 }
 
-func TestTemperatureEmulationAnomalies_Decrease_Trend_Time_Duration_Test_B(t *testing.T) {
-	emulator := createEmulator(14400, 0)
-	emulator.T.IsTrendAnomaly = true
-	emulator.T.TrendAnomalyMagnitude = 30.0
-	emulator.T.TrendAnomalyLength = 1e3
-	emulator.T.IsRisingTrendAnomaly = false
+// func TestTemperatureEmulationAnomalies_Decrease_Trend_Time_Duration_Test_B(t *testing.T) {
+// 	emulator := createEmulator(14400, 0)
+// 	emulator.T.IsTrendAnomaly = true
+// 	emulator.T.TrendAnomalyMagnitude = 30.0
+// 	emulator.T.TrendAnomalyLength = 1e3
+// 	emulator.T.IsRisingTrendAnomaly = false
 
-	emulator.T.TrendAnomalyTimeStart = time.Now().Unix()
-	emulator.T.TrendAnomalyTimeDuration = 20
+// 	emulator.T.TrendAnomalyTimeStart = time.Now().Unix()
+// 	emulator.T.TrendAnomalyTimeDuration = 20
 
-	var results []float64
-	results = emulator.Time_base_duration_loop(emulator.T.TrendAnomalyTimeStart, emulator.T.TrendAnomalyTimeDuration)
+// 	var results []float64
+// 	results = emulator.Time_base_duration_loop(emulator.T.TrendAnomalyTimeStart, emulator.T.TrendAnomalyTimeDuration)
 
-	assert.True(t, mean(results) < emulator.T.MeanTemperature)
-}
+// 	assert.True(t, mean(results) < emulator.T.MeanTemperature)
+// }
 
-func TestTemperatureEmulationAnomalies_Decrease_Trend_Time_Duration(t *testing.T) {
-	emulator := createEmulator(14400, 0)
-	emulator.T.IsTrendAnomaly = true
-	emulator.T.TrendAnomalyMagnitude = 30.0
-	emulator.T.TrendAnomalyLength = 1e3
-	emulator.T.IsRisingTrendAnomaly = false
+// func TestTemperatureEmulationAnomalies_Decrease_Trend_Time_Duration(t *testing.T) {
+// 	emulator := createEmulator(14400, 0)
+// 	emulator.T.IsTrendAnomaly = true
+// 	emulator.T.TrendAnomalyMagnitude = 30.0
+// 	emulator.T.TrendAnomalyLength = 1e3
+// 	emulator.T.IsRisingTrendAnomaly = false
 
-	emulator.T.TrendAnomalyTimeStart = time.Now().Unix()
-	emulator.T.TrendAnomalyTimeDuration = 20
+// 	emulator.T.TrendAnomalyTimeStart = time.Now().Unix()
+// 	emulator.T.TrendAnomalyTimeDuration = 20
 
-	var results []float64
-	for continue_flag := true; continue_flag; continue_flag = (emulator.T.TrendAnomalyTimeCurrent - emulator.T.TrendAnomalyTimeStart) < emulator.T.TrendAnomalyTimeDuration {
-		emulator.Step()
-		results = append(results, emulator.T.T)
-		emulator.T.TrendAnomalyTimeCurrent = time.Now().Unix()
-	}
+// 	var results []float64
+// 	for continue_flag := true; continue_flag; continue_flag = (emulator.T.TrendAnomalyTimeCurrent - emulator.T.TrendAnomalyTimeStart) < emulator.T.TrendAnomalyTimeDuration {
+// 		emulator.Step()
+// 		results = append(results, emulator.T.T)
+// 		emulator.T.TrendAnomalyTimeCurrent = time.Now().Unix()
+// 	}
 
-	assert.True(t, mean(results) < emulator.T.MeanTemperature)
-}
+// 	assert.True(t, mean(results) < emulator.T.MeanTemperature)
+// }
 
 func TestSagEmulation(t *testing.T) {
 	emulator := createEmulator(14400, 0)
