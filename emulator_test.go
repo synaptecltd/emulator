@@ -120,32 +120,37 @@ func TestTemperatureEmulationAnomalies_Anomalies(t *testing.T) {
 	assert.True(t, mean(anomalyValues) > mean(normalValues))
 }
 
-func TestTemperatureEmulationAnomalies_Trend(t *testing.T) {
+func TestTemperatureEmulationAnomalies_RisingTrend(t *testing.T) {
 	emulator := createEmulator(14400, 0)
 	emulator.T.IsTrendAnomaly = true
 	emulator.T.TrendAnomalyMagnitude = 30.0
-	emulator.T.TrendAnomalyLength = 1e3
+	emulator.T.TrendAnomalyDuration = 10
 	emulator.T.IsRisingTrendAnomaly = true
+
 	step := 0
 	var results []float64
-	for step < 1e4 {
+	for step < emulator.T.TrendAnomalyDuration*emulator.SamplingRate {
 		emulator.Step()
 		results = append(results, emulator.T.T)
 		step += 1
+
+		if step < emulator.SamplingRate {
+			assert.NotEqual(t, 0, emulator.T.TrendAnomalyIndex)
+		}
 	}
 
 	assert.True(t, mean(results) > emulator.T.MeanTemperature)
 }
 
-func TestTemperatureEmulationAnomalies_Decrease_Trend(t *testing.T) {
-	emulator := createEmulator(14400, 0)
+func TestTemperatureEmulationAnomalies_DecreasingTrend(t *testing.T) {
+	emulator := createEmulator(1, 0)
 	emulator.T.IsTrendAnomaly = true
 	emulator.T.TrendAnomalyMagnitude = 30.0
-	emulator.T.TrendAnomalyLength = 1e3
+	emulator.T.TrendAnomalyDuration = 10
 	emulator.T.IsRisingTrendAnomaly = false
 	step := 0
 	var results []float64
-	for step < 1e4 {
+	for step < 10 {
 		emulator.Step()
 		results = append(results, emulator.T.T)
 		step += 1

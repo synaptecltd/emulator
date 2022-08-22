@@ -75,7 +75,7 @@ type TemperatureEmulation struct {
 
 	// trend anomalies
 	IsTrendAnomaly        bool
-	TrendAnomalyLength    int
+	TrendAnomalyDuration  int // duration in seconds
 	TrendAnomalyIndex     int
 	TrendAnomalyMagnitude float64
 
@@ -208,7 +208,7 @@ func (t *TemperatureEmulation) stepTemperature(r *rand.Rand, Ts float64) {
 	varyingT := t.MeanTemperature * (1 + t.ModulationMag*math.Cos(1000.0*Ts))
 
 	trendAnomalyDelta := 0.0
-	trendAnomalyStep := t.TrendAnomalyMagnitude / float64(t.TrendAnomalyLength)
+	trendAnomalyStep := (t.TrendAnomalyMagnitude / float64(t.TrendAnomalyDuration)) * Ts
 
 	if t.IsTrendAnomaly == true {
 
@@ -218,7 +218,7 @@ func (t *TemperatureEmulation) stepTemperature(r *rand.Rand, Ts float64) {
 			trendAnomalyDelta = float64(t.TrendAnomalyIndex) * trendAnomalyStep * (-1.0)
 		}
 
-		if t.TrendAnomalyIndex == t.TrendAnomalyLength-1 {
+		if t.TrendAnomalyIndex == int(float64(t.TrendAnomalyDuration)/Ts)-1 {
 			t.TrendAnomalyIndex = 0
 		} else {
 			t.TrendAnomalyIndex += 1
