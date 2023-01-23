@@ -3,12 +3,12 @@ package emulator
 import "math/rand"
 
 type Anomaly struct {
-	// instantaneous anomalies
+	// instantaneous anomalies, based on probability factor
 	isInstantaneousAnomaly          bool // private
 	InstantaneousAnomalyProbability float64
 	InstantaneousAnomalyMagnitude   float64
 
-	// trend anomalies
+	// trend anomalies, providing positive or negative slope of given magnitude and duration
 	IsTrendAnomaly        bool
 	IsRisingTrendAnomaly  bool
 	TrendAnomalyDuration  int // duration in seconds

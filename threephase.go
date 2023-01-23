@@ -58,11 +58,15 @@ func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64
 		e.FaultRemainingSamples--
 	}
 
+	// positive sequence magnitude anomaly
 	totalAnomalyDeltaPosSeqMag := e.PosSeqMagAnomaly.stepAnomaly(r, Ts)
 	posSeqMag += totalAnomalyDeltaPosSeqMag
 
+	// phase A magnitude anomaly
+	anomalyPhaseA := e.PhaseAMagAnomaly.stepAnomaly(r, Ts)
+
 	// positive sequence
-	a1 := math.Sin(PosSeqPhase) * posSeqMag
+	a1 := math.Sin(PosSeqPhase) * (posSeqMag + anomalyPhaseA)
 	b1 := math.Sin(PosSeqPhase-TwoPiOverThree) * posSeqMag
 	c1 := math.Sin(PosSeqPhase+TwoPiOverThree) * posSeqMag
 
@@ -98,7 +102,7 @@ func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64
 	rc := r.NormFloat64() * e.NoiseMax * e.PosSeqMag
 
 	// combine the output for each phase
-	e.A = a1 + a2 + abc0 + ah + ra + e.PhaseAMagAnomaly.stepAnomaly(r, Ts)
+	e.A = a1 + a2 + abc0 + ah + ra
 	e.B = b1 + b2 + abc0 + bh + rb
 	e.C = c1 + c2 + abc0 + ch + rc
 }
