@@ -103,7 +103,7 @@ func NewEmulator(samplingRate int, frequency float64) *Emulator {
 	return emu
 }
 
-// Step performs one iteration of the waveform generation
+// Step performs one iteration of the waveform generation for the given time step, Ts
 func (e *Emulator) Step() {
 	f := e.Fnom + e.Fdeviation
 

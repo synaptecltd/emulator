@@ -15,9 +15,9 @@ type ThreePhaseEmulation struct {
 	NegSeqAng       float64
 	ZeroSeqMag      float64
 	ZeroSeqAng      float64
-	HarmonicNumbers []float64 `mapstructure:",omitempty,flow"`
-	HarmonicMags    []float64 `mapstructure:",omitempty,flow"` // pu, relative to PosSeqMag
-	HarmonicAngs    []float64 `mapstructure:",omitempty,flow"`
+	HarmonicNumbers []float64
+	HarmonicMags    []float64 // pu, relative to PosSeqMag
+	HarmonicAngs    []float64
 	NoiseMax        float64
 
 	// event emulation
