@@ -20,6 +20,10 @@ type ThreePhaseEmulation struct {
 	HarmonicAngs    []float64
 	NoiseMax        float64
 
+	// allow positive sequency and phase A magnitude anomalies
+	PosSeqMagAnomaly Anomaly
+	PhaseAMagAnomaly Anomaly
+
 	// event emulation
 	FaultPhaseAMag        float64
 	FaultPosSeqMag        float64
@@ -53,6 +57,9 @@ func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64
 		posSeqMag = posSeqMag + e.FaultPosSeqMag
 		e.FaultRemainingSamples--
 	}
+
+	totalAnomalyDeltaPosSeqMag := e.PosSeqMagAnomaly.stepAnomaly(r, Ts)
+	posSeqMag += totalAnomalyDeltaPosSeqMag
 
 	// positive sequence
 	a1 := math.Sin(PosSeqPhase) * posSeqMag
@@ -91,7 +98,7 @@ func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64
 	rc := r.NormFloat64() * e.NoiseMax * e.PosSeqMag
 
 	// combine the output for each phase
-	e.A = a1 + a2 + abc0 + ah + ra
+	e.A = a1 + a2 + abc0 + ah + ra + e.PhaseAMagAnomaly.stepAnomaly(r, Ts)
 	e.B = b1 + b2 + abc0 + bh + rb
 	e.C = c1 + c2 + abc0 + ch + rc
 }
