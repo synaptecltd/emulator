@@ -129,14 +129,14 @@ func TestTemperatureEmulationAnomalies_RisingTrend(t *testing.T) {
 	emulator.T.Anomaly.TrendAnomalyDuration = 10
 	emulator.T.Anomaly.IsRisingTrendAnomaly = true
 
-	step := 0
+	step := 0.0
 	var results []float64
-	for step < emulator.T.Anomaly.TrendAnomalyDuration*emulator.SamplingRate {
+	for step < emulator.T.Anomaly.TrendAnomalyDuration*float64(emulator.SamplingRate) {
 		emulator.Step()
 		results = append(results, emulator.T.T)
 		step += 1
 
-		if step < emulator.SamplingRate {
+		if step < float64(emulator.SamplingRate) {
 			assert.NotEqual(t, 0, emulator.T.Anomaly.TrendAnomalyIndex)
 		}
 	}

@@ -11,26 +11,33 @@ type Anomaly struct {
 	// trend anomalies, providing positive or negative slope of given magnitude and duration
 	IsTrendAnomaly        bool
 	IsRisingTrendAnomaly  bool
-	TrendAnomalyDuration  int // duration in seconds
-	TrendAnomalyIndex     int
+	TrendAnomalyDuration  float64 // duration in seconds
+	TrendStartDelay       float64 // duration in seconds
+	TrendStartIndex       int     // number of time step ticks
+	TrendAnomalyIndex     int     // number of time step ticks
 	TrendAnomalyMagnitude float64
 }
 
 func (anomaly *Anomaly) stepAnomaly(r *rand.Rand, Ts float64) float64 {
 	trendAnomalyDelta := 0.0
-	trendAnomalyStep := (anomaly.TrendAnomalyMagnitude / float64(anomaly.TrendAnomalyDuration)) * Ts
+	trendAnomalyStep := (anomaly.TrendAnomalyMagnitude / anomaly.TrendAnomalyDuration) * Ts
 
 	if anomaly.IsTrendAnomaly {
-		if anomaly.IsRisingTrendAnomaly {
-			trendAnomalyDelta = float64(anomaly.TrendAnomalyIndex) * trendAnomalyStep
-		} else {
-			trendAnomalyDelta = float64(anomaly.TrendAnomalyIndex) * trendAnomalyStep * (-1.0)
-		}
+		if anomaly.TrendStartIndex >= int(anomaly.TrendStartDelay/Ts)-1 {
+			if anomaly.IsRisingTrendAnomaly {
+				trendAnomalyDelta = float64(anomaly.TrendAnomalyIndex) * trendAnomalyStep
+			} else {
+				trendAnomalyDelta = float64(anomaly.TrendAnomalyIndex) * trendAnomalyStep * (-1.0)
+			}
 
-		if anomaly.TrendAnomalyIndex == int(float64(anomaly.TrendAnomalyDuration)/Ts)-1 {
-			anomaly.TrendAnomalyIndex = 0
+			if anomaly.TrendAnomalyIndex == int(anomaly.TrendAnomalyDuration/Ts)-1 {
+				anomaly.TrendAnomalyIndex = 0
+				anomaly.TrendStartIndex = 0
+			} else {
+				anomaly.TrendAnomalyIndex += 1
+			}
 		} else {
-			anomaly.TrendAnomalyIndex += 1
+			anomaly.TrendStartIndex += 1
 		}
 	}
 

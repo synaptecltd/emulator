@@ -22,7 +22,9 @@ type ThreePhaseEmulation struct {
 
 	// allow positive sequency and phase A magnitude anomalies
 	PosSeqMagAnomaly Anomaly
+	PosSeqAngAnomaly Anomaly
 	PhaseAMagAnomaly Anomaly
+	// TODO: pos seq phase angle, freq, harmonic mags
 
 	// event emulation
 	FaultPhaseAMag        float64
