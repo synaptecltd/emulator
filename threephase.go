@@ -25,6 +25,7 @@ type ThreePhaseEmulation struct {
 	PosSeqAngAnomaly Anomaly
 	PhaseAMagAnomaly Anomaly
 	FreqAnomaly      Anomaly
+	HarmonicsAnomaly Anomaly
 	// TODO: harmonic mags
 
 	// event emulation
@@ -105,6 +106,11 @@ func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64
 			}
 		}
 	}
+
+	harmonicsScale := e.HarmonicsAnomaly.stepAnomaly(r, Ts)
+	ah = ah * (1 + harmonicsScale)
+	bh = bh * (1 + harmonicsScale)
+	ch = ch * (1 + harmonicsScale)
 
 	// add noise, ensure worst case where noise is uncorrelated across phases
 	ra := r.NormFloat64() * e.NoiseMax * e.PosSeqMag
