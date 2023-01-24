@@ -47,7 +47,10 @@ func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64
 	angle = wrapAngle(angle)
 	e.pAngle = angle
 
-	PosSeqPhase := e.PhaseOffset + e.pAngle
+	// positive sequence angle anomaly
+	totalAnomalyDeltaPosSeqAng := e.PosSeqAngAnomaly.stepAnomaly(r, Ts)
+
+	PosSeqPhase := e.PhaseOffset + e.pAngle + (math.Pi * totalAnomalyDeltaPosSeqAng / 180.0)
 
 	if math.Abs(e.PosSeqMagNew-e.PosSeqMag) >= math.Abs(e.PosSeqMagRampRate) {
 		e.PosSeqMag = e.PosSeqMag + e.PosSeqMagRampRate

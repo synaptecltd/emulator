@@ -4,7 +4,7 @@ import "math/rand"
 
 type Anomaly struct {
 	// instantaneous anomalies, based on probability factor
-	isInstantaneousAnomaly          bool // private
+	isInstantaneousAnomaly          bool // private, activated based on probability
 	InstantaneousAnomalyProbability float64
 	InstantaneousAnomalyMagnitude   float64
 
