@@ -24,7 +24,8 @@ type ThreePhaseEmulation struct {
 	PosSeqMagAnomaly Anomaly
 	PosSeqAngAnomaly Anomaly
 	PhaseAMagAnomaly Anomaly
-	// TODO: pos seq phase angle, freq, harmonic mags
+	FreqAnomaly      Anomaly
+	// TODO: harmonic mags
 
 	// event emulation
 	FaultPhaseAMag        float64
@@ -43,7 +44,11 @@ type ThreePhaseEmulation struct {
 }
 
 func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64, smpCnt int) {
-	angle := (f*2*math.Pi*Ts + e.pAngle)
+	// frequency anomaly
+	totalAnomalyDeltaFrequency := e.FreqAnomaly.stepAnomaly(r, Ts)
+	freqTotal := f + totalAnomalyDeltaFrequency
+
+	angle := (freqTotal*2*math.Pi*Ts + e.pAngle)
 	angle = wrapAngle(angle)
 	e.pAngle = angle
 
