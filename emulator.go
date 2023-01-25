@@ -1,8 +1,8 @@
 package emulator
 
 import (
+	"hash/maphash"
 	"math/rand"
-	"time"
 )
 
 // Emulated event types
@@ -98,7 +98,7 @@ func NewEmulator(samplingRate int, frequency float64) *Emulator {
 		Ts:           1 / float64(samplingRate),
 	}
 
-	emu.r = rand.New(rand.NewSource(time.Now().Unix()))
+	emu.r = rand.New(rand.NewSource(int64(new(maphash.Hash).Sum64())))
 
 	return emu
 }
