@@ -23,14 +23,14 @@ func (anomaly *Anomaly) stepAnomaly(r *rand.Rand, Ts float64) float64 {
 	trendAnomalyStep := (anomaly.TrendAnomalyMagnitude / anomaly.TrendAnomalyDuration) * Ts
 
 	if anomaly.IsTrendAnomaly {
-		if anomaly.TrendStartIndex >= int(anomaly.TrendStartDelay/Ts)-1 {
+		if anomaly.TrendStartIndex >= int(anomaly.TrendStartDelay/Ts) {
 			if anomaly.IsRisingTrendAnomaly {
 				trendAnomalyDelta = float64(anomaly.TrendAnomalyIndex) * trendAnomalyStep
 			} else {
 				trendAnomalyDelta = float64(anomaly.TrendAnomalyIndex) * trendAnomalyStep * (-1.0)
 			}
 
-			if anomaly.TrendAnomalyIndex == int(anomaly.TrendAnomalyDuration/Ts)-1 {
+			if anomaly.TrendAnomalyIndex == int(anomaly.TrendAnomalyDuration/Ts) {
 				anomaly.TrendAnomalyIndex = 0
 				anomaly.TrendStartIndex = 0
 			} else {
