@@ -20,13 +20,12 @@ type ThreePhaseEmulation struct {
 	HarmonicAngs    []float64
 	NoiseMax        float64
 
-	// allow positive sequency and phase A magnitude anomalies
-	PosSeqMagAnomaly Anomaly
-	PosSeqAngAnomaly Anomaly
-	PhaseAMagAnomaly Anomaly
-	FreqAnomaly      Anomaly
-	HarmonicsAnomaly Anomaly
-	// TODO: harmonic mags
+	// define anomalies
+	PosSeqMagAnomaly Anomaly // positive sequence magnitude anomaly
+	PosSeqAngAnomaly Anomaly // positive sequence angle anomaly
+	PhaseAMagAnomaly Anomaly // phase A magnitude anomaly
+	FreqAnomaly      Anomaly // frequency anomaly
+	HarmonicsAnomaly Anomaly // harmonics magnitude anomaly
 
 	// event emulation
 	FaultPhaseAMag        float64

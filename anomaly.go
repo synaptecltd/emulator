@@ -8,7 +8,7 @@ type Anomaly struct {
 	InstantaneousAnomalyProbability float64
 	InstantaneousAnomalyMagnitude   float64
 
-	// trend anomalies, providing positive or negative slope of given magnitude and duration
+	// trend anomalies, providing periodic positive or negative slopes of given magnitude and duration
 	IsTrendAnomaly        bool
 	IsRisingTrendAnomaly  bool
 	TrendAnomalyDuration  float64 // duration in seconds
@@ -23,14 +23,14 @@ func (anomaly *Anomaly) stepAnomaly(r *rand.Rand, Ts float64) float64 {
 	trendAnomalyStep := (anomaly.TrendAnomalyMagnitude / anomaly.TrendAnomalyDuration) * Ts
 
 	if anomaly.IsTrendAnomaly {
-		if anomaly.TrendStartIndex >= int(anomaly.TrendStartDelay/Ts) {
+		if anomaly.TrendStartIndex >= int(anomaly.TrendStartDelay/Ts)-1 {
 			if anomaly.IsRisingTrendAnomaly {
 				trendAnomalyDelta = float64(anomaly.TrendAnomalyIndex) * trendAnomalyStep
 			} else {
 				trendAnomalyDelta = float64(anomaly.TrendAnomalyIndex) * trendAnomalyStep * (-1.0)
 			}
 
-			if anomaly.TrendAnomalyIndex == int(anomaly.TrendAnomalyDuration/Ts) {
+			if anomaly.TrendAnomalyIndex == int(anomaly.TrendAnomalyDuration/Ts)-1 {
 				anomaly.TrendAnomalyIndex = 0
 				anomaly.TrendStartIndex = 0
 			} else {

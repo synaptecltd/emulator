@@ -1,6 +1,7 @@
 package emulator
 
 import (
+	"fmt"
 	"math"
 	"testing"
 
@@ -62,6 +63,23 @@ func createEmulator(samplingRate int, phaseOffsetDeg float64) *Emulator {
 			InstantaneousAnomalyProbability: 0.01,
 		},
 	}
+	return emu
+}
+
+func createEmulatorForAnomaly(samplingRate int, phaseOffsetDeg float64) *Emulator {
+	emu := NewEmulator(samplingRate, 50.0)
+
+	emu.I = &ThreePhaseEmulation{
+		PosSeqMag:   350.0,
+		PhaseOffset: 0.0,
+		PosSeqMagAnomaly: Anomaly{
+			IsTrendAnomaly:        true,
+			IsRisingTrendAnomaly:  true,
+			TrendAnomalyDuration:  10,
+			TrendAnomalyMagnitude: 1060.32,
+		},
+	}
+
 	return emu
 }
 
@@ -159,6 +177,34 @@ func TestTemperatureEmulationAnomalies_DecreasingTrend(t *testing.T) {
 	}
 
 	assert.True(t, mean(results) < emulator.T.MeanTemperature)
+}
+
+func TestCurrentPosSeqAnomalies_RisingTrend(t *testing.T) {
+	emulator := createEmulatorForAnomaly(4000, 0)
+
+	step := 0.0
+	var results []float64
+	for step < emulator.I.PosSeqMagAnomaly.TrendAnomalyDuration*float64(emulator.SamplingRate) {
+		emulator.Step()
+		results = append(results, emulator.I.A)
+		step += 1
+
+		if step < float64(emulator.SamplingRate) {
+			assert.NotEqual(t, 0, emulator.I.PosSeqMagAnomaly.TrendAnomalyIndex)
+		}
+	}
+
+	// find maxMag value of array
+	maxMag := 0.0
+	for _, value := range results {
+		if value > maxMag {
+			maxMag = value
+		}
+	}
+	targetMag := emulator.I.PosSeqMag + emulator.I.PosSeqMagAnomaly.TrendAnomalyMagnitude
+
+	fmt.Println("targetMag: ", targetMag, "maxMag: ", maxMag)
+	assert.True(t, FloatingPointEqual(targetMag, maxMag, 50))
 }
 
 func TestSagEmulation(t *testing.T) {
