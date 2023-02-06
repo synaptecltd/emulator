@@ -1,7 +1,6 @@
 package emulator
 
 import (
-	"fmt"
 	"math"
 	"testing"
 
@@ -203,7 +202,6 @@ func TestCurrentPosSeqAnomalies_RisingTrend(t *testing.T) {
 	}
 	targetMag := emulator.I.PosSeqMag + emulator.I.PosSeqMagAnomaly.TrendAnomalyMagnitude
 
-	fmt.Println("targetMag: ", targetMag, "maxMag: ", maxMag)
 	assert.True(t, FloatingPointEqual(targetMag, maxMag, 50))
 }
 
