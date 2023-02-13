@@ -20,9 +20,10 @@ type Anomaly struct {
 
 func (anomaly *Anomaly) stepAnomaly(r *rand.Rand, Ts float64) float64 {
 	trendAnomalyDelta := 0.0
-	trendAnomalyStep := (anomaly.TrendAnomalyMagnitude / anomaly.TrendAnomalyDuration) * Ts
 
-	if anomaly.IsTrendAnomaly {
+	if anomaly.IsTrendAnomaly && anomaly.TrendAnomalyDuration > 0.0 {
+		trendAnomalyStep := (anomaly.TrendAnomalyMagnitude / anomaly.TrendAnomalyDuration) * Ts
+
 		if anomaly.TrendStartIndex >= int(anomaly.TrendStartDelay/Ts)-1 {
 			if anomaly.IsRisingTrendAnomaly {
 				trendAnomalyDelta = float64(anomaly.TrendAnomalyIndex) * trendAnomalyStep
