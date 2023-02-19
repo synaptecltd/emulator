@@ -3,6 +3,8 @@ package emulator
 import (
 	"math"
 	"math/rand"
+
+	"github.com/teknico/sigourney/fast"
 )
 
 const TwoPiOverThree = 2 * math.Pi / 3
@@ -76,17 +78,17 @@ func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64
 	anomalyPhaseA := e.PhaseAMagAnomaly.stepAnomaly(r, Ts)
 
 	// positive sequence
-	a1 := math.Sin(PosSeqPhase) * (posSeqMag + anomalyPhaseA)
-	b1 := math.Sin(PosSeqPhase-TwoPiOverThree) * posSeqMag
-	c1 := math.Sin(PosSeqPhase+TwoPiOverThree) * posSeqMag
+	a1 := fast.Sin(PosSeqPhase) * (posSeqMag + anomalyPhaseA)
+	b1 := fast.Sin(PosSeqPhase-TwoPiOverThree) * posSeqMag
+	c1 := fast.Sin(PosSeqPhase+TwoPiOverThree) * posSeqMag
 
 	// negative sequence
-	a2 := math.Sin(PosSeqPhase+e.NegSeqAng) * e.NegSeqMag * e.PosSeqMag
-	b2 := math.Sin(PosSeqPhase+TwoPiOverThree+e.NegSeqAng) * e.NegSeqMag * e.PosSeqMag
-	c2 := math.Sin(PosSeqPhase-TwoPiOverThree+e.NegSeqAng) * e.NegSeqMag * e.PosSeqMag
+	a2 := fast.Sin(PosSeqPhase+e.NegSeqAng) * e.NegSeqMag * e.PosSeqMag
+	b2 := fast.Sin(PosSeqPhase+TwoPiOverThree+e.NegSeqAng) * e.NegSeqMag * e.PosSeqMag
+	c2 := fast.Sin(PosSeqPhase-TwoPiOverThree+e.NegSeqAng) * e.NegSeqMag * e.PosSeqMag
 
 	// zero sequence
-	abc0 := math.Sin(PosSeqPhase+e.ZeroSeqAng) * e.ZeroSeqMag * e.PosSeqMag
+	abc0 := fast.Sin(PosSeqPhase+e.ZeroSeqAng) * e.ZeroSeqMag * e.PosSeqMag
 
 	// harmonics
 	ah := 0.0
@@ -99,9 +101,9 @@ func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64
 				mag := e.HarmonicMags[i] * e.PosSeqMag
 				ang := e.HarmonicAngs[i] // / 180.0 * math.Pi
 
-				ah = ah + math.Sin(n*(PosSeqPhase)+ang)*mag
-				bh = bh + math.Sin(n*(PosSeqPhase-TwoPiOverThree)+ang)*mag
-				ch = ch + math.Sin(n*(PosSeqPhase+TwoPiOverThree)+ang)*mag
+				ah = ah + fast.Sin(n*(PosSeqPhase)+ang)*mag
+				bh = bh + fast.Sin(n*(PosSeqPhase-TwoPiOverThree)+ang)*mag
+				ch = ch + fast.Sin(n*(PosSeqPhase+TwoPiOverThree)+ang)*mag
 			}
 		}
 	}
