@@ -6,13 +6,13 @@ import (
 )
 
 type TemperatureEmulation struct {
-	MeanTemperature float64
-	NoiseMax        float64
-	ModulationMag   float64
+	MeanTemperature float64 `yaml:"MeanTemperature"` // Mean temperature
+	NoiseMax        float64 `yaml:"NoseMax"`         // Maximum noise
+	ModulationMag   float64 `yaml:"ModulationMag"`   // Magnitude modulation
 
-	Anomaly Anomaly
+	Anomaly Anomaly `yaml:"Anomaly"` // Anomaly
 
-	T float64
+	T float64 `yaml:"-"`
 }
 
 func (t *TemperatureEmulation) stepTemperature(r *rand.Rand, Ts float64) {
