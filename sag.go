@@ -6,9 +6,9 @@ import (
 )
 
 type SagEmulation struct {
-	MeanStrain                float64 `yaml:"MeanStrain"`                // Mean strain
-	MeanSag                   float64 `yaml:"MeanSag"`                   // Mean sag
-	MeanCalculatedTemperature float64 `yaml:"MeanCalculatedTemperature"` // Mean calculated temperature
+	MeanStrain                float64 `yaml:"MeanStrain,omitempty"`                // Mean strain
+	MeanSag                   float64 `yaml:"MeanSag,omitempty"`                   // Mean sag
+	MeanCalculatedTemperature float64 `yaml:"MeanCalculatedTemperature,omitempty"` // Mean calculated temperature
 
 	// outputs
 	TotalStrain           float64 `yaml:"-"` // Total strain

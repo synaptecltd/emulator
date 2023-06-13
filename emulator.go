@@ -39,11 +39,11 @@ type Emulator struct {
 	Fnom         float64 `yaml:"Fnom"`         // Nominal frequency
 	Fdeviation   float64 `yaml:"Fdeviation"`   // Frequency deviation
 
-	V *ThreePhaseEmulation `yaml:"VoltageEmulator"` // Voltage Emulator
-	I *ThreePhaseEmulation `yaml:"CurrentEmulator"` // Current Emulator
+	V *ThreePhaseEmulation `yaml:"VoltageEmulator,omitempty"` // Voltage Emulator
+	I *ThreePhaseEmulation `yaml:"CurrentEmulator,omitempty"` // Current Emulator
 
-	T   *TemperatureEmulation `yaml:"TemperatureEmulator"` // Temperature Emulation
-	Sag *SagEmulation         `yaml:"SagEmulator"`         // Sag Emulator
+	T   *TemperatureEmulation `yaml:"TemperatureEmulator,omitempty"` // Temperature Emulation
+	Sag *SagEmulation         `yaml:"SagEmulator,omitempty"`         // Sag Emulator
 
 	// common state
 	SmpCnt                     int `yaml:"-"`

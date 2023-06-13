@@ -6,9 +6,9 @@ import (
 )
 
 type TemperatureEmulation struct {
-	MeanTemperature float64 `yaml:"MeanTemperature"` // Mean temperature
-	NoiseMax        float64 `yaml:"NoseMax"`         // Maximum noise
-	ModulationMag   float64 `yaml:"ModulationMag"`   // Magnitude modulation
+	MeanTemperature float64 `yaml:"MeanTemperature"`         // Mean temperature
+	NoiseMax        float64 `yaml:"NoseMax"`                 // Maximum noise
+	ModulationMag   float64 `yaml:"ModulationMag,omitempty"` // Magnitude modulation
 
 	Anomaly Anomaly `yaml:"Anomaly"` // Anomaly
 

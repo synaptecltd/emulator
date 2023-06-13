@@ -11,16 +11,16 @@ const TwoPiOverThree = 2 * math.Pi / 3
 
 type ThreePhaseEmulation struct {
 	// inputs
-	PosSeqMag       float64   `yaml:"PosSeqMag"`            // Positive Sequence Magnitude
-	PhaseOffset     float64   `yaml:"PhaseOffset"`          // Phase Offset
-	NegSeqMag       float64   `yaml:"NegSeqMag"`            // Negative Sequence Magnitude
-	NegSeqAng       float64   `yaml:"NegSeqAng"`            // Negative Sequence Angle
-	ZeroSeqMag      float64   `yaml:"ZeroSeqMag"`           // Zero Sequence Magnitude
-	ZeroSeqAng      float64   `yaml:"ZeroSeqAng"`           // Zero Sequence Angle
-	HarmonicNumbers []float64 `yaml:"HarmonicNumbers,flow"` // Harmonic Numbers
-	HarmonicMags    []float64 `yaml:"HarmonicMags,flow"`    // Harmonic magnitudes in pu, relative to PosSeqMag
-	HarmonicAngs    []float64 `yaml:"HarmonicAngs,flow"`    // Harmonic Angles
-	NoiseMax        float64   `yaml:"NoiseMax"`             // Maximum noise
+	PosSeqMag       float64   `yaml:"PosSeqMag"`                      // Positive Sequence Magnitude
+	PhaseOffset     float64   `yaml:"PhaseOffset,omitempty"`          // Phase Offset
+	NegSeqMag       float64   `yaml:"NegSeqMag,omitempty"`            // Negative Sequence Magnitude
+	NegSeqAng       float64   `yaml:"NegSeqAng,omitempty"`            // Negative Sequence Angle
+	ZeroSeqMag      float64   `yaml:"ZeroSeqMag,omitempty"`           // Zero Sequence Magnitude
+	ZeroSeqAng      float64   `yaml:"ZeroSeqAng,omitempty"`           // Zero Sequence Angle
+	HarmonicNumbers []float64 `yaml:"HarmonicNumbers,flow,omitempty"` // Harmonic Numbers
+	HarmonicMags    []float64 `yaml:"HarmonicMags,flow,omitempty"`    // Harmonic magnitudes in pu, relative to PosSeqMag
+	HarmonicAngs    []float64 `yaml:"HarmonicAngs,flow,omitempty"`    // Harmonic Angles
+	NoiseMax        float64   `yaml:"NoiseMax,omitempty"`             // Maximum noise
 
 	// define anomalies
 	PosSeqMagAnomaly Anomaly // positive sequence magnitude anomaly
