@@ -34,22 +34,22 @@ const EmulatedFaultCurrentMagnitude = 80
 // Emulator encapsulates the waveform emulation of three-phase voltage, three-phase current, or temperature
 type Emulator struct {
 	// common inputs
-	SamplingRate int
-	Ts           float64
-	Fnom         float64
-	Fdeviation   float64
+	SamplingRate int     `yaml:"SamplingRate"` // The sampling rate of the emulator
+	Ts           float64 `yaml:"Ts"`           // The time step for a given sampling rate
+	Fnom         float64 `yaml:"Fnom"`         // Nominal frequency
+	Fdeviation   float64 `yaml:"Fdeviation"`   // Frequency deviation
 
-	V *ThreePhaseEmulation
-	I *ThreePhaseEmulation
+	V *ThreePhaseEmulation `yaml:"VoltageEmulator,omitempty"` // Voltage Emulator
+	I *ThreePhaseEmulation `yaml:"CurrentEmulator,omitempty"` // Current Emulator
 
-	T   *TemperatureEmulation
-	Sag *SagEmulation
+	T   *TemperatureEmulation `yaml:"TemperatureEmulator,omitempty"` // Temperature Emulation
+	Sag *SagEmulation         `yaml:"SagEmulator,omitempty"`         // Sag Emulator
 
 	// common state
-	SmpCnt                     int
-	fDeviationRemainingSamples int
+	SmpCnt                     int `yaml:"-"`
+	fDeviationRemainingSamples int `yaml:"-"`
 
-	r *rand.Rand
+	r *rand.Rand `yaml:"-"`
 }
 
 // StartEvent initiates an emulated event
@@ -61,12 +61,12 @@ func (e *Emulator) StartEvent(eventType int) {
 		// TODO
 		// e.I.FaultPosSeqMag = EmulatedFaultCurrentMagnitude
 		// e.I.FaultRemainingSamples = MaxEmulatedFaultDurationSamples
-		e.I.FaultPhaseAMag = e.I.PosSeqMag * 1.2 //EmulatedFaultCurrentMagnitude
+		e.I.FaultPhaseAMag = e.I.PosSeqMag * 1.2 // EmulatedFaultCurrentMagnitude
 		e.I.FaultRemainingSamples = MaxEmulatedFaultDurationSamples
 		e.V.FaultPhaseAMag = e.V.PosSeqMag * -0.2
 		e.V.FaultRemainingSamples = MaxEmulatedFaultDurationSamples
 	case ThreePhaseFault:
-		e.I.FaultPosSeqMag = e.I.PosSeqMag * 1.2 //EmulatedFaultCurrentMagnitude
+		e.I.FaultPosSeqMag = e.I.PosSeqMag * 1.2 // EmulatedFaultCurrentMagnitude
 		e.I.FaultRemainingSamples = MaxEmulatedFaultDurationSamples
 		e.V.FaultPosSeqMag = e.V.PosSeqMag * -0.2
 		e.V.FaultRemainingSamples = MaxEmulatedFaultDurationSamples

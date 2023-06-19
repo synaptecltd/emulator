@@ -9,13 +9,13 @@ type Anomaly struct {
 	InstantaneousAnomalyMagnitude   float64
 
 	// trend anomalies, providing periodic positive or negative slopes of given magnitude and duration
-	IsTrendAnomaly        bool
-	IsRisingTrendAnomaly  bool
-	TrendAnomalyDuration  float64 // duration in seconds
-	TrendStartDelay       float64 // duration in seconds
-	TrendStartIndex       int     // number of time step ticks
-	TrendAnomalyIndex     int     // number of time step ticks
-	TrendAnomalyMagnitude float64
+	IsTrendAnomaly        bool    `yaml:"IsTrendAnomaly"`
+	IsRisingTrendAnomaly  bool    `yaml:"IsRisingTrendAnomaly"`
+	TrendAnomalyDuration  float64 `yaml:"TrendAnomalyDuration"` // duration in seconds
+	TrendStartDelay       float64 `yaml:"TrendStartDelay"`      // duration in seconds
+	TrendStartIndex       int     `yaml:"TrendStartIndex"`      // number of time step ticks
+	TrendAnomalyIndex     int     `yaml:"TrendAnomalyIndex"`    // number of time step ticks
+	TrendAnomalyMagnitude float64 `yaml:"TrendAnomalyMagnitude"`
 }
 
 func (anomaly *Anomaly) stepAnomaly(r *rand.Rand, Ts float64) float64 {
