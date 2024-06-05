@@ -65,7 +65,7 @@ func createEmulator(samplingRate int, phaseOffsetDeg float64) *Emulator {
 	return emu
 }
 
-func createEmulatorForAnomaly(samplingRate int, phaseOffsetDeg float64) *Emulator {
+func createEmulatorForAnomaly(samplingRate int) *Emulator {
 	emu := NewEmulator(samplingRate, 50.0)
 
 	emu.I = &ThreePhaseEmulation{
@@ -84,10 +84,7 @@ func createEmulatorForAnomaly(samplingRate int, phaseOffsetDeg float64) *Emulato
 
 func FloatingPointEqual(expected float64, actual float64, threshold float64) bool {
 	absDiff := math.Abs(expected - actual)
-	if absDiff < threshold {
-		return true
-	}
-	return false
+	return absDiff < threshold
 }
 
 func mean(values []float64) float64 {
@@ -179,7 +176,7 @@ func TestTemperatureEmulationAnomalies_DecreasingTrend(t *testing.T) {
 }
 
 func TestCurrentPosSeqAnomalies_RisingTrend(t *testing.T) {
-	emulator := createEmulatorForAnomaly(4000, 0)
+	emulator := createEmulatorForAnomaly(4000)
 
 	step := 0.0
 	var results []float64
