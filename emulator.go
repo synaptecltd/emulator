@@ -1,8 +1,6 @@
 package emulator
 
-import (
-	"math/rand/v2"
-)
+import "math/rand/v2"
 
 // Emulated event types
 const (
