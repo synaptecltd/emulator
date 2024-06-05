@@ -2,7 +2,7 @@ package emulator
 
 import (
 	"math"
-	"math/rand"
+	"math/rand/v2"
 
 	"github.com/teknico/sigourney/fast"
 )
