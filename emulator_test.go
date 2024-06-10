@@ -103,7 +103,7 @@ func TestTemperatureEmulationAnomalies_NoAnomalies(t *testing.T) {
 	var results []bool
 	for step < 1e4 {
 		emulator.Step()
-		results = append(results, emulator.T.Anomaly.isInstantaneousAnomaly)
+		results = append(results, emulator.T.Anomaly.InstantaneousAnomalyActive)
 		step += 1
 	}
 	assert.NotContains(t, results, true)
@@ -119,9 +119,9 @@ func TestTemperatureEmulationAnomalies_Anomalies(t *testing.T) {
 	var anomalyValues []float64
 	for step < 1e4 {
 		emulator.Step()
-		results = append(results, emulator.T.Anomaly.isInstantaneousAnomaly)
+		results = append(results, emulator.T.Anomaly.InstantaneousAnomalyActive)
 
-		if emulator.T.Anomaly.isInstantaneousAnomaly == true {
+		if emulator.T.Anomaly.InstantaneousAnomalyActive == true {
 			anomalyValues = append(anomalyValues, emulator.T.T)
 		} else {
 			normalValues = append(normalValues, emulator.T.T)
