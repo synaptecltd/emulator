@@ -32,7 +32,7 @@ const EmulatedFaultCurrentMagnitude = 80
 type Emulator struct {
 	// common inputs
 	SamplingRate int     `yaml:"SamplingRate"` // The sampling rate of the emulator
-	Ts           float64 `yaml:"Ts"`           // The time step for a given sampling rate
+	Ts           float64 `yaml:"Ts"`           // The time step or sampling period (=1/SamplingRate)
 	Fnom         float64 `yaml:"Fnom"`         // Nominal frequency
 	Fdeviation   float64 `yaml:"Fdeviation"`   // Frequency deviation
 
