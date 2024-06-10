@@ -87,6 +87,8 @@ func (e *Emulator) StartEvent(eventType int) {
 	}
 }
 
+// Returns a new Emulator instance with a given sampling rate and frequency.
+// The emulator's random seed is initialized with a random value.
 func NewEmulator(samplingRate int, frequency float64) *Emulator {
 	emu := &Emulator{
 		SamplingRate: samplingRate,
@@ -98,6 +100,12 @@ func NewEmulator(samplingRate int, frequency float64) *Emulator {
 	emu.r = rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64()))
 
 	return emu
+}
+
+// Sets the random seed for the emulator. This is useful for
+// generating identical random events across multiple runs.
+func (e *Emulator) SetRandomSeed(seed uint64) {
+	e.r = rand.New(rand.NewPCG(seed, seed))
 }
 
 // Step performs one iteration of the waveform generation for the given time step, Ts
