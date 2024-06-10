@@ -68,12 +68,11 @@ func (t *TrendAnomaly) getDelta(Ts float64) float64 {
 	// The duration that we are through the existing trend anomaly in seconds
 	elapsedTrendTime := float64(t.TrendAnomalyIndex) * Ts
 
-	trendAnomalySign := 1.0
-	if !t.IsRisingTrendAnomaly {
-		trendAnomalySign = -1.0
-	}
+	// The sign of the trend anomaly based on whether it is a rising or falling trend
+	trendAnomalySign := t.getTrendAnomalySign()
 
 	trendAnomalyDelta := elapsedTrendTime * trendSlope * trendAnomalySign
+
 	t.TrendAnomalyIndex += 1
 
 	// If the trend anomaly is complete, reset the index and increment the repeat counter
@@ -113,4 +112,12 @@ func (t *TrendAnomaly) isTrendsAnomalyActive(Ts float64) bool {
 	}
 
 	return true
+}
+
+// Returns the sign of the trend anomaly based on whether it is a rising or falling trend.
+func (t *TrendAnomaly) getTrendAnomalySign() float64 {
+	if t.IsRisingTrendAnomaly {
+		return 1.0
+	}
+	return -1.0
 }
