@@ -22,7 +22,7 @@ type Anomaly struct {
 	TrendStartDelay       float64 `yaml:"TrendStartDelay"`       // start time of trend anomalies in seconds
 	TrendAnomalyMagnitude float64 `yaml:"TrendAnomalyMagnitude"` // magnitude of trend anomaly
 	TrendRepetition       int     `yaml:"TrendRepetition"`       // number of times the trend anomaly repeats, default 0 for infinite
-	TrendFunction         string  `yaml:"TrendFunction"`         // function to use for the trend anomaly, defaults to linear
+	TrendFuncName         string  `yaml:"TrendFunction"`         // name of function to use for the trend anomaly, defaults to linear ramp if empty
 	TrendAnomalyActive    bool    // indicates whether trend anomaly is active in this time step
 
 	TrendStartIndex   int `yaml:"TrendStartIndex"`   // TrendStartDelay converted to number of time steps
@@ -67,7 +67,7 @@ func (a *Anomaly) getTrendDelta(Ts float64) float64 {
 	elapsedTrendTime := float64(a.TrendAnomalyIndex) * Ts
 
 	// Get the function to use for the trend anomaly
-	trendFunc, err := mathfuncs.GetTrendFunctionFromName(a.TrendFunction)
+	trendFunc, err := mathfuncs.GetTrendFunctionFromName(a.TrendFuncName)
 	if err != nil {
 		panic(err)
 	}
