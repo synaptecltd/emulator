@@ -118,14 +118,26 @@ func exponentialNoise(_, A, _ float64) float64 {
 	return -A * math.Log(rand.Float64())
 }
 
-// Returns a random walk of amplitude A every period T.
+// Returns a random walk that lasts for period T. The walk is bounded
+// to within +/- amplitude A, and can make steps of maximum size A/20.
 // The returned function is stateful, it remembers the previous value.
 // This prevents stack overflow errors that occur with recursive implementations.
 var randomWalk = func() func(float64, float64, float64) float64 {
+	stepFactor := 20.0
 	var previousValue float64 = 0
 	return func(t, A, T float64) float64 {
 		if t != 0 {
-			previousValue += A * (rand.Float64()*2 - 1)
+			step := A / stepFactor * (rand.Float64()*2 - 1)
+			proposedValue := previousValue + step
+
+			// Hold the value within the bounds of +/- A
+			if proposedValue > A {
+				previousValue = A
+			} else if proposedValue < -A {
+				previousValue = -A
+			} else {
+				previousValue = proposedValue
+			}
 		}
 		return previousValue
 	}
