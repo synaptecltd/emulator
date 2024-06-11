@@ -11,16 +11,16 @@ const TwoPiOverThree = 2 * math.Pi / 3
 
 type ThreePhaseEmulation struct {
 	// inputs
-	PosSeqMag       float64   `yaml:"PosSeqMag"`                      // Positive Sequence Magnitude
-	PhaseOffset     float64   `yaml:"PhaseOffset,omitempty"`          // Phase Offset
-	NegSeqMag       float64   `yaml:"NegSeqMag,omitempty"`            // Negative Sequence Magnitude
-	NegSeqAng       float64   `yaml:"NegSeqAng,omitempty"`            // Negative Sequence Angle
-	ZeroSeqMag      float64   `yaml:"ZeroSeqMag,omitempty"`           // Zero Sequence Magnitude
-	ZeroSeqAng      float64   `yaml:"ZeroSeqAng,omitempty"`           // Zero Sequence Angle
-	HarmonicNumbers []float64 `yaml:"HarmonicNumbers,flow,omitempty"` // Harmonic Numbers
-	HarmonicMags    []float64 `yaml:"HarmonicMags,flow,omitempty"`    // Harmonic magnitudes in pu, relative to PosSeqMag
-	HarmonicAngs    []float64 `yaml:"HarmonicAngs,flow,omitempty"`    // Harmonic Angles
-	NoiseMax        float64   `yaml:"NoiseMax,omitempty"`             // Maximum noise (Gaussian)
+	PosSeqMag       float64   `yaml:"PosSeqMag"`                      // positive Sequence Magnitude
+	PhaseOffset     float64   `yaml:"PhaseOffset,omitempty"`          // phase Offset
+	NegSeqMag       float64   `yaml:"NegSeqMag,omitempty"`            // negative Sequence Magnitude
+	NegSeqAng       float64   `yaml:"NegSeqAng,omitempty"`            // negative Sequence Angle
+	ZeroSeqMag      float64   `yaml:"ZeroSeqMag,omitempty"`           // zero Sequence Magnitude
+	ZeroSeqAng      float64   `yaml:"ZeroSeqAng,omitempty"`           // zero Sequence Angle
+	HarmonicNumbers []float64 `yaml:"HarmonicNumbers,flow,omitempty"` // harmonic Numbers
+	HarmonicMags    []float64 `yaml:"HarmonicMags,flow,omitempty"`    // harmonic magnitudes in pu, relative to PosSeqMag
+	HarmonicAngs    []float64 `yaml:"HarmonicAngs,flow,omitempty"`    // harmonic Angles
+	NoiseMax        float64   `yaml:"NoiseMax,omitempty"`             // magnitude of Gaussian noise
 
 	// define anomalies
 	PosSeqMagAnomaly Anomaly // positive sequence magnitude anomaly
@@ -45,6 +45,8 @@ type ThreePhaseEmulation struct {
 	A, B, C float64 `yaml:"-"`
 }
 
+// Steps the three phase emulation forward by one time step. The new values are
+// defined based on magntiudes, noise values, anomalies and fault conditions.
 func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64, smpCnt int) {
 	// frequency anomaly
 	totalAnomalyDeltaFrequency := e.FreqAnomaly.stepAnomaly(r, Ts)
@@ -124,6 +126,7 @@ func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64
 	e.C = c1 + c2 + abc0 + ch + rc
 }
 
+// Wraps the angle a to the range -pi to pi
 func wrapAngle(a float64) float64 {
 	if a > math.Pi {
 		return a - 2*math.Pi

@@ -1,9 +1,41 @@
-package emulator
+package mathfuncs
 
 import (
+	"errors"
 	"math"
 	"math/rand/v2"
 )
+
+// A map between string names and functions
+var trendFunctions = map[string]func(float64, float64, float64) float64{
+	"linear":            linearRamp, // default
+	"sine":              sinusoid,
+	"cosine":            cosine,
+	"exponential":       exponentialRamp,
+	"parabolic":         parabolicRamp,
+	"step":              stepFunction,
+	"square":            squareWave,
+	"sawtooth":          sawtoothWave,
+	"impulse":           impulseTrain,
+	"random_noise":      randomNoise,
+	"gaussian_noise":    gaussianNoise,
+	"exponential_noise": exponentialNoise,
+	"random_walk":       randomWalk,
+}
+
+// Returns the named trend function. Defaults to linear if name is empty.
+func GetTrendFunctionFromName(name string) (func(float64, float64, float64) float64, error) {
+	// Default to linear if no name is provided
+	if name == "" {
+		return trendFunctions["linear"], nil
+	}
+	trendFunc, ok := trendFunctions[name]
+	if !ok {
+		return nil, errors.New("trend function not found")
+	}
+
+	return trendFunc, nil
+}
 
 // Returns a linear ramp y=(A/T)*t where A is the magntiude of the ramp, T is
 // its duration, and t is elapsed time.

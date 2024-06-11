@@ -2,6 +2,8 @@ package emulator
 
 import (
 	"math/rand/v2"
+
+	"github.com/synaptecltd/emulator/mathfuncs"
 )
 
 // Anomaly provides combinations of instantaneous and trend anomalies.
@@ -26,23 +28,6 @@ type Anomaly struct {
 	TrendStartIndex   int `yaml:"TrendStartIndex"`   // TrendStartDelay converted to number of time steps
 	TrendAnomalyIndex int `yaml:"TrendAnomalyIndex"` // number of time steps since the start of the last trend anomaly
 	trendRepeats      int // internal counter for number of times the trend anomaly has repeated
-}
-
-// Define a map between TrendFunction strings and functions
-var trendFunctions = map[string]func(float64, float64, float64) float64{
-	"linear":            linearRamp, // default
-	"sine":              sinusoid,
-	"cosine":            cosine,
-	"exponential":       exponentialRamp,
-	"parabolic":         parabolicRamp,
-	"step":              stepFunction,
-	"square":            squareWave,
-	"sawtooth":          sawtoothWave,
-	"impulse":           impulseTrain,
-	"random_noise":      randomNoise,
-	"gaussian_noise":    gaussianNoise,
-	"exponential_noise": exponentialNoise,
-	"random_walk":       randomWalk,
 }
 
 // Returns the change in signal caused by all anomalies this timestep.
@@ -82,10 +67,9 @@ func (a *Anomaly) getTrendDelta(Ts float64) float64 {
 	elapsedTrendTime := float64(a.TrendAnomalyIndex) * Ts
 
 	// Get the function to use for the trend anomaly
-	trendFunc, ok := trendFunctions[a.TrendFunction]
-	if !ok {
-		// Default to linear ramp if the function is not found in the map
-		trendFunc = linearRamp
+	trendFunc, err := mathfuncs.GetTrendFunctionFromName(a.TrendFunction)
+	if err != nil {
+		panic(err)
 	}
 
 	trendAnomalyMagnitude := trendFunc(elapsedTrendTime, a.TrendAnomalyMagnitude, a.TrendAnomalyDuration)

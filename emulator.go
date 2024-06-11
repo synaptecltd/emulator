@@ -102,8 +102,8 @@ func NewEmulator(samplingRate int, frequency float64) *Emulator {
 	return emu
 }
 
-// Sets the random seed for the emulator. This is useful for
-// generating identical random events across multiple runs.
+// Sets the random seed for the emulator. This can be used to
+// generate identical random events across multiple runs.
 func (e *Emulator) SetRandomSeed(seed uint64) {
 	e.r = rand.New(rand.NewPCG(seed, seed))
 }
