@@ -3,28 +3,30 @@ package emulator
 import "math/rand/v2"
 
 // Anomaly provides combinations of instantaneous and trend anomalies.
+//   - InstantaneousAnomaly produces spikes in the data that occur at each timestep based on a probability factor.
+//   - TrendAnomaly provides periodic positive or negative slopes of given magnitude and duration
 type Anomaly struct {
-	// InstantaneousAnomaly produces spikes in the data that occur at each timestep based on a probability factor.
+	// Instantaneous anomalies
 	InstantaneousAnomalyProbability float64 `yaml:"InstantaneousAnomalyProbability"` // probability of instantaneous anomaly in each time step
 	InstantaneousAnomalyMagnitude   float64 `yaml:"InstantaneousAnomalyMagnitude"`   // magnitude of instantaneous anomalies
-	InstantaneousAnomalyActive      bool    // indicates whether an instantaneous anomaly is active in this time step
+	InstantaneousAnomalyActive      bool    // indicates whether instantaneous anomaly is active in this time step
 
-	// TrendAnomaly provides periodic positive or negative slopes of given magnitude and duration
+	// Trend anomalies
 	IsTrendAnomaly        bool    `yaml:"IsTrendAnomaly"`        // true: trend anomalies activated, false: deactivated
 	IsRisingTrendAnomaly  bool    `yaml:"IsRisingTrendAnomaly"`  // true: positive slope, false: negative slope
 	TrendAnomalyDuration  float64 `yaml:"TrendAnomalyDuration"`  // duration of each trend anomaly in seconds
 	TrendStartDelay       float64 `yaml:"TrendStartDelay"`       // start time of trend anomalies in seconds
 	TrendAnomalyMagnitude float64 `yaml:"TrendAnomalyMagnitude"` // magnitude of trend anomaly
 	TrendRepetition       int     `yaml:"TrendRepetition"`       // number of times the trend anomaly repeats, default 0 for infinite
-	TrendAnomalyActive    bool    // indicates whether a trend anomaly is active in this time step
+	TrendAnomalyActive    bool    // indicates whether trend anomaly is active in this time step
 
 	TrendStartIndex   int `yaml:"TrendStartIndex"`   // used internally: TrendStartDelay converted to number of time step ticks
 	TrendAnomalyIndex int `yaml:"TrendAnomalyIndex"` // used internally: number of time step ticks since the start of the last trend anomaly
-	trendRepeats      int // internal counter for number of times the trend anomaly has been repeated
+	trendRepeats      int // internal counter for number of times the trend anomaly has repeated
 }
 
-// Calculates the anomaly delta for the current timestep based on all active anomalies. Ts is the sampling
-// period of the data in seconds, and r is a random number generator.
+// Returns the change in signal caused by all anomalies this timestep.
+// Ts is the sampling period of the data in seconds, and r is a random number generator.
 func (anomaly *Anomaly) stepAnomaly(r *rand.Rand, Ts float64) float64 {
 	instantaneousAnomalyDelta := anomaly.getInstantaneousDelta(r)
 	trendAnomalyDelta := anomaly.getTrendDelta(Ts)
