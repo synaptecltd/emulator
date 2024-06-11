@@ -20,8 +20,8 @@ type Anomaly struct {
 	TrendRepetition       int     `yaml:"TrendRepetition"`       // number of times the trend anomaly repeats, default 0 for infinite
 	TrendAnomalyActive    bool    // indicates whether trend anomaly is active in this time step
 
-	TrendStartIndex   int `yaml:"TrendStartIndex"`   // used internally: TrendStartDelay converted to number of time step ticks
-	TrendAnomalyIndex int `yaml:"TrendAnomalyIndex"` // used internally: number of time step ticks since the start of the last trend anomaly
+	TrendStartIndex   int `yaml:"TrendStartIndex"`   // TrendStartDelay converted to number of time steps
+	TrendAnomalyIndex int `yaml:"TrendAnomalyIndex"` // number of time steps since the start of the last trend anomaly
 	trendRepeats      int // internal counter for number of times the trend anomaly has repeated
 }
 
