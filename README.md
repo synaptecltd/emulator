@@ -44,6 +44,7 @@ emu.T = &emulator.TemperatureEmulation{
         "ramp_and_spikes": {
             InstantaneousAnomalyMagnitude:   30,
             InstantaneousAnomalyProbability: 0.01,
+            InstantaneousAnomalyMagnitudeVariation: true,
 
             IsTrendAnomaly:        true,
             IsRisingTrendAnomaly:  true,
