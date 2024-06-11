@@ -11,9 +11,10 @@ import (
 //   - TrendAnomaly provides periodic positive or negative slopes of given magnitude and duration
 type Anomaly struct {
 	// Instantaneous anomalies
-	InstantaneousAnomalyProbability float64 `yaml:"InstantaneousAnomalyProbability"` // probability of instantaneous anomaly in each time step
-	InstantaneousAnomalyMagnitude   float64 `yaml:"InstantaneousAnomalyMagnitude"`   // magnitude of instantaneous anomalies
-	InstantaneousAnomalyActive      bool    // indicates whether instantaneous anomaly is active in this time step
+	InstantaneousAnomalyProbability        float64 `yaml:"InstantaneousAnomalyProbability"`        // probability of instantaneous anomaly in each time step
+	InstantaneousAnomalyMagnitude          float64 `yaml:"InstantaneousAnomalyMagnitude"`          // magnitude of instantaneous anomalies
+	InstantaneousAnomalyMagnitudeVariation bool    `yaml:"InstantaneousAnomalyMagnitudeVariation"` // whether to vary the magnitude of the instantaneous anomaly, default false
+	InstantaneousAnomalyActive             bool    // indicates whether instantaneous anomaly is active in this time step
 
 	// Trend anomalies
 	IsTrendAnomaly        bool    `yaml:"IsTrendAnomaly"`        // true: trend anomalies activated, false: deactivated
@@ -57,7 +58,11 @@ func (a *Anomaly) getInstantaneousDelta(r *rand.Rand) float64 {
 	instantaneousAnomalyDelta := 0.0
 	a.InstantaneousAnomalyActive = false
 	if a.InstantaneousAnomalyProbability > r.Float64() {
-		instantaneousAnomalyDelta = a.InstantaneousAnomalyMagnitude
+		if a.InstantaneousAnomalyMagnitudeVariation {
+			instantaneousAnomalyDelta = a.InstantaneousAnomalyMagnitude * r.NormFloat64()
+		} else {
+			instantaneousAnomalyDelta = a.InstantaneousAnomalyMagnitude
+		}
 		a.InstantaneousAnomalyActive = true
 	}
 	return instantaneousAnomalyDelta
