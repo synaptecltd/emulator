@@ -30,6 +30,16 @@ type Anomaly struct {
 	trendRepeats      int // internal counter for number of times the trend anomaly has repeated
 }
 
+// Steps all anomalies and returns the sum of their effects.
+func stepAllAnomalies(anomalies map[string]*Anomaly, r *rand.Rand, Ts float64) float64 {
+	value := 0.0
+	// Must use indexing so that each anomaly internal state is updated
+	for key := range anomalies {
+		value += anomalies[key].stepAnomaly(r, Ts)
+	}
+	return value
+}
+
 // Returns the change in signal caused by all anomalies this timestep.
 // Ts is the sampling period of the data in seconds, and r is a random number generator.
 func (anomaly *Anomaly) stepAnomaly(r *rand.Rand, Ts float64) float64 {

@@ -23,11 +23,11 @@ type ThreePhaseEmulation struct {
 	NoiseMax        float64   `yaml:"NoiseMax,omitempty"`             // magnitude of Gaussian noise
 
 	// define anomalies
-	PosSeqMagAnomaly Anomaly // positive sequence magnitude anomaly
-	PosSeqAngAnomaly Anomaly // positive sequence angle anomaly
-	PhaseAMagAnomaly Anomaly // phase A magnitude anomaly
-	FreqAnomaly      Anomaly // frequency anomaly
-	HarmonicsAnomaly Anomaly // harmonics magnitude anomaly
+	PosSeqMagAnomaly map[string]*Anomaly // positive sequence magnitude anomaly
+	PosSeqAngAnomaly map[string]*Anomaly // positive sequence angle anomaly
+	PhaseAMagAnomaly map[string]*Anomaly // phase A magnitude anomaly
+	FreqAnomaly      map[string]*Anomaly // frequency anomaly
+	HarmonicsAnomaly map[string]*Anomaly // harmonics magnitude anomaly
 
 	// event emulation
 	FaultPhaseAMag        float64 `yaml:"-"`
@@ -49,7 +49,7 @@ type ThreePhaseEmulation struct {
 // defined based on magntiudes, noise values, anomalies and fault conditions.
 func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64, smpCnt int) {
 	// frequency anomaly
-	totalAnomalyDeltaFrequency := e.FreqAnomaly.stepAnomaly(r, Ts)
+	totalAnomalyDeltaFrequency := stepAllAnomalies(e.FreqAnomaly, r, Ts)
 	freqTotal := f + totalAnomalyDeltaFrequency
 
 	angle := (freqTotal*2*math.Pi*Ts + e.pAngle)
@@ -57,7 +57,7 @@ func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64
 	e.pAngle = angle
 
 	// positive sequence angle anomaly
-	totalAnomalyDeltaPosSeqAng := e.PosSeqAngAnomaly.stepAnomaly(r, Ts)
+	totalAnomalyDeltaPosSeqAng := stepAllAnomalies(e.PosSeqAngAnomaly, r, Ts)
 
 	PosSeqPhase := e.PhaseOffset + e.pAngle + (math.Pi * totalAnomalyDeltaPosSeqAng / 180.0)
 
@@ -73,11 +73,11 @@ func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64
 	}
 
 	// positive sequence magnitude anomaly
-	totalAnomalyDeltaPosSeqMag := e.PosSeqMagAnomaly.stepAnomaly(r, Ts)
+	totalAnomalyDeltaPosSeqMag := stepAllAnomalies(e.PosSeqMagAnomaly, r, Ts)
 	posSeqMag += totalAnomalyDeltaPosSeqMag
 
 	// phase A magnitude anomaly
-	anomalyPhaseA := e.PhaseAMagAnomaly.stepAnomaly(r, Ts)
+	anomalyPhaseA := stepAllAnomalies(e.PhaseAMagAnomaly, r, Ts)
 
 	// positive sequence
 	a1 := fast.Sin(PosSeqPhase) * (posSeqMag + anomalyPhaseA)
@@ -110,7 +110,7 @@ func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64
 		}
 	}
 
-	harmonicsScale := e.HarmonicsAnomaly.stepAnomaly(r, Ts)
+	harmonicsScale := stepAllAnomalies(e.HarmonicsAnomaly, r, Ts)
 	ah = ah * (1 + harmonicsScale)
 	bh = bh * (1 + harmonicsScale)
 	ch = ch * (1 + harmonicsScale)
