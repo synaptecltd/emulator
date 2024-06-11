@@ -20,7 +20,7 @@ type ThreePhaseEmulation struct {
 	HarmonicNumbers []float64 `yaml:"HarmonicNumbers,flow,omitempty"` // Harmonic Numbers
 	HarmonicMags    []float64 `yaml:"HarmonicMags,flow,omitempty"`    // Harmonic magnitudes in pu, relative to PosSeqMag
 	HarmonicAngs    []float64 `yaml:"HarmonicAngs,flow,omitempty"`    // Harmonic Angles
-	NoiseMax        float64   `yaml:"NoiseMax,omitempty"`             // Maximum noise
+	NoiseMax        float64   `yaml:"NoiseMax,omitempty"`             // Maximum noise (Gaussian)
 
 	// define anomalies
 	PosSeqMagAnomaly Anomaly // positive sequence magnitude anomaly

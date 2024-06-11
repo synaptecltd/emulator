@@ -30,11 +30,19 @@ type Anomaly struct {
 
 // Define a map between TrendFunction strings and functions
 var trendFunctions = map[string]func(float64, float64, float64) float64{
-	"linear":      linearRamp, // default
-	"sine":        sinusoid,
-	"exponential": exponentialRamp,
-	"square":      squareWave,
-	"sawtooth":    sawtoothWave,
+	"linear":            linearRamp, // default
+	"sine":              sinusoid,
+	"cosine":            cosine,
+	"exponential":       exponentialRamp,
+	"parabolic":         parabolicRamp,
+	"step":              stepFunction,
+	"square":            squareWave,
+	"sawtooth":          sawtoothWave,
+	"impulse":           impulseTrain,
+	"random_noise":      randomNoise,
+	"gaussian_noise":    gaussianNoise,
+	"exponential_noise": exponentialNoise,
+	"random_walk":       randomWalk,
 }
 
 // Returns the change in signal caused by all anomalies this timestep.
