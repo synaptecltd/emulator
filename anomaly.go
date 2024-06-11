@@ -1,6 +1,8 @@
 package emulator
 
-import "math/rand/v2"
+import (
+	"math/rand/v2"
+)
 
 // Anomaly provides combinations of instantaneous and trend anomalies.
 //   - InstantaneousAnomaly produces spikes in the data that occur at each timestep based on a probability factor.
@@ -18,11 +20,21 @@ type Anomaly struct {
 	TrendStartDelay       float64 `yaml:"TrendStartDelay"`       // start time of trend anomalies in seconds
 	TrendAnomalyMagnitude float64 `yaml:"TrendAnomalyMagnitude"` // magnitude of trend anomaly
 	TrendRepetition       int     `yaml:"TrendRepetition"`       // number of times the trend anomaly repeats, default 0 for infinite
+	TrendFunction         string  `yaml:"TrendFunction"`         // function to use for the trend anomaly, defaults to linear
 	TrendAnomalyActive    bool    // indicates whether trend anomaly is active in this time step
 
 	TrendStartIndex   int `yaml:"TrendStartIndex"`   // TrendStartDelay converted to number of time steps
 	TrendAnomalyIndex int `yaml:"TrendAnomalyIndex"` // number of time steps since the start of the last trend anomaly
 	trendRepeats      int // internal counter for number of times the trend anomaly has repeated
+}
+
+// Define a map between TrendFunction strings and functions
+var trendFunctions = map[string]func(float64, float64, float64) float64{
+	"linear":      linearRamp, // default
+	"sine":        sinusoid,
+	"exponential": exponentialRamp,
+	"square":      squareWave,
+	"sawtooth":    sawtoothWave,
 }
 
 // Returns the change in signal caused by all anomalies this timestep.
@@ -58,17 +70,18 @@ func (a *Anomaly) getTrendDelta(Ts float64) float64 {
 		return 0.0
 	}
 
-	// Slope of the trend anomaly in units of magnitude change per second
-	trendSlope := a.TrendAnomalyMagnitude / a.TrendAnomalyDuration
-
 	// The duration that we are through the existing trend anomaly in seconds
 	elapsedTrendTime := float64(a.TrendAnomalyIndex) * Ts
 
-	// The sign of the trend anomaly based on whether it is a rising or falling trend
-	trendAnomalySign := a.getTrendAnomalySign()
+	// Get the function to use for the trend anomaly
+	trendFunc, ok := trendFunctions[a.TrendFunction]
+	if !ok {
+		// Default to linear ramp if the function is not found in the map
+		trendFunc = linearRamp
+	}
 
-	trendAnomalyDelta := elapsedTrendTime * trendSlope * trendAnomalySign
-
+	trendAnomalyMagnitude := trendFunc(elapsedTrendTime, a.TrendAnomalyMagnitude, a.TrendAnomalyDuration)
+	trendAnomalyDelta := a.getTrendAnomalySign() * trendAnomalyMagnitude
 	a.TrendAnomalyIndex += 1
 
 	// If the trend anomaly is complete, reset the index and increment the repeat counter
@@ -111,7 +124,7 @@ func (a *Anomaly) isTrendsAnomalyActive(Ts float64) bool {
 	return true
 }
 
-// Returns the sign of the trend anomaly based on whether it is a rising or falling trend.
+// Returns +1.0 if RisingTrendAnomaly is true, or -1.0 if false.
 func (a *Anomaly) getTrendAnomalySign() float64 {
 	if a.IsRisingTrendAnomaly {
 		return 1.0
