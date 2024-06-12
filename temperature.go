@@ -5,10 +5,10 @@ import (
 )
 
 type TemperatureEmulation struct {
-	MeanTemperature float64             `yaml:"MeanTemperature"` // mean temperature
-	NoiseMax        float64             `yaml:"NoiseMax"`        // magnitude of Gaussian noise
-	Anomaly         map[string]*Anomaly `yaml:"Anomalies"`       // anomalies
-	T               float64             `yaml:"-"`               // present value of temperature
+	MeanTemperature float64          `yaml:"MeanTemperature"` // mean temperature
+	NoiseMax        float64          `yaml:"NoiseMax"`        // magnitude of Gaussian noise
+	Anomaly         AnomalyContainer `yaml:"Anomaly"`         // anomalies
+	T               float64          `yaml:"-"`               // present value of temperature
 }
 
 // Steps the temperature emulation forward by one time step. The new temperature is

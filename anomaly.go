@@ -28,11 +28,17 @@ type Anomaly struct {
 
 	TrendStartIndex   int `yaml:"TrendStartIndex"`   // TrendStartDelay converted to number of time steps
 	TrendAnomalyIndex int `yaml:"TrendAnomalyIndex"` // number of time steps since the start of the last trend anomaly
-	trendRepeats      int // internal counter for number of times the trend anomaly has repeated
+
+	// internal state
+	trendRepeats int                                     // counter for number of times trend anomaly has repeated
+	trendFunc    func(float64, float64, float64) float64 // function to use for the trend anomaly
 }
 
+// A collection of named anomalies.
+type AnomalyContainer map[string]*Anomaly
+
 // Steps all anomalies and returns the sum of their effects.
-func stepAllAnomalies(anomalies map[string]*Anomaly, r *rand.Rand, Ts float64) float64 {
+func stepAllAnomalies(anomalies AnomalyContainer, r *rand.Rand, Ts float64) float64 {
 	value := 0.0
 	// Must use indexing so that each anomaly internal state is updated
 	for key := range anomalies {
@@ -41,31 +47,37 @@ func stepAllAnomalies(anomalies map[string]*Anomaly, r *rand.Rand, Ts float64) f
 	return value
 }
 
-// Returns the change in signal caused by all anomalies this timestep.
+// Returns the change in signal from instantaneous and trend anomalies this timestep.
 // Ts is the sampling period of the data in seconds, and r is a random number generator.
-func (anomaly *Anomaly) stepAnomaly(r *rand.Rand, Ts float64) float64 {
-	instantaneousAnomalyDelta := anomaly.getInstantaneousDelta(r)
-	trendAnomalyDelta := anomaly.getTrendDelta(Ts)
+func (a *Anomaly) stepAnomaly(r *rand.Rand, Ts float64) float64 {
+	// Set internal state: get the function to use for the trend anomaly if not set
+	if a.trendFunc == nil {
+		trendFunc, err := mathfuncs.GetTrendFunctionFromName(a.TrendFuncName)
+		if err != nil {
+			panic(err)
+		}
+		a.trendFunc = trendFunc
+	}
 
-	totalAnomalyDelta := trendAnomalyDelta + instantaneousAnomalyDelta
+	instantaneousAnomalyDelta := a.getInstantaneousDelta(r)
+	trendAnomalyDelta := a.getTrendDelta(Ts)
 
-	return totalAnomalyDelta
+	return instantaneousAnomalyDelta + trendAnomalyDelta
 }
 
-// Returns the change in signal caused by the instantaneous anomaly this timestep (the delta).
-// The anomaly is activated when its probability factor exceeds a random number.
+// Returns the change in signal caused by the instantaneous anomaly this timestep.
 func (a *Anomaly) getInstantaneousDelta(r *rand.Rand) float64 {
-	instantaneousAnomalyDelta := 0.0
-	a.InstantaneousAnomalyActive = false
-	if a.InstantaneousAnomalyProbability > r.Float64() {
-		if a.InstantaneousAnomalyMagnitudeVariation {
-			instantaneousAnomalyDelta = a.InstantaneousAnomalyMagnitude * r.NormFloat64()
-		} else {
-			instantaneousAnomalyDelta = a.InstantaneousAnomalyMagnitude
-		}
-		a.InstantaneousAnomalyActive = true
+	// No anomaly if probability is not met
+	if r.Float64() > a.InstantaneousAnomalyProbability {
+		a.InstantaneousAnomalyActive = false
+		return 0.0
 	}
-	return instantaneousAnomalyDelta
+
+	a.InstantaneousAnomalyActive = true
+	if a.InstantaneousAnomalyMagnitudeVariation {
+		return a.InstantaneousAnomalyMagnitude * r.NormFloat64()
+	}
+	return a.InstantaneousAnomalyMagnitude
 }
 
 // Returns the change in signal caused by the trend anomaly this timestep (the delta),
@@ -78,16 +90,10 @@ func (a *Anomaly) getTrendDelta(Ts float64) float64 {
 		return 0.0
 	}
 
-	// The duration that we are through the existing trend anomaly in seconds
+	// Current duration into the trend anomaly in seconds
 	elapsedTrendTime := float64(a.TrendAnomalyIndex) * Ts
 
-	// Get the function to use for the trend anomaly
-	trendFunc, err := mathfuncs.GetTrendFunctionFromName(a.TrendFuncName)
-	if err != nil {
-		panic(err)
-	}
-
-	trendAnomalyMagnitude := trendFunc(elapsedTrendTime, a.TrendAnomalyMagnitude, a.TrendAnomalyDuration)
+	trendAnomalyMagnitude := a.trendFunc(elapsedTrendTime, a.TrendAnomalyMagnitude, a.TrendAnomalyDuration)
 	trendAnomalyDelta := a.getTrendAnomalySign() * trendAnomalyMagnitude
 	a.TrendAnomalyIndex += 1
 

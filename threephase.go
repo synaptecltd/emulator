@@ -23,11 +23,11 @@ type ThreePhaseEmulation struct {
 	NoiseMax        float64   `yaml:"NoiseMax,omitempty"`             // magnitude of Gaussian noise
 
 	// define anomalies
-	PosSeqMagAnomaly map[string]*Anomaly // positive sequence magnitude anomaly
-	PosSeqAngAnomaly map[string]*Anomaly // positive sequence angle anomaly
-	PhaseAMagAnomaly map[string]*Anomaly // phase A magnitude anomaly
-	FreqAnomaly      map[string]*Anomaly // frequency anomaly
-	HarmonicsAnomaly map[string]*Anomaly // harmonics magnitude anomaly
+	PosSeqMagAnomaly AnomalyContainer // positive sequence magnitude anomaly
+	PosSeqAngAnomaly AnomalyContainer // positive sequence angle anomaly
+	PhaseAMagAnomaly AnomalyContainer // phase A magnitude anomaly
+	FreqAnomaly      AnomalyContainer // frequency anomaly
+	HarmonicsAnomaly AnomalyContainer // harmonics magnitude anomaly
 
 	// event emulation
 	FaultPhaseAMag        float64 `yaml:"-"`
