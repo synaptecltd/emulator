@@ -40,7 +40,7 @@ emu.I = &emulator.ThreePhaseEmulation{
 emu.T = &emulator.TemperatureEmulation{
     MeanTemperature: 30.0,
     NoiseMax:        0.01,
-    Anomaly: map[string]*emulator.Anomaly{
+    Anomaly: emulator.AnomalyContainer{
         "ramp_and_spikes": {
             InstantaneousAnomalyMagnitude:   30,
             InstantaneousAnomalyProbability: 0.01,
