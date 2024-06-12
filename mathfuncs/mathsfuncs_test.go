@@ -163,8 +163,8 @@ func TestNoiseFunctions(t *testing.T) {
 		checkBounds     bool    // whether to check the bounds of the noise
 		lowerBound      float64 // lower bound of the noise
 		upperBound      float64 // upper bound of the noise
-		checkStepSize   bool    // whether to check the change in noise from one sample to the next
-		maxStepSize     float64 // maximum step size allowed
+		checkNoiseDelta bool    // whether to check the change in noise from one sample to the next
+		maxDelta        float64 // maximum change in noise allowed between samples
 	}
 
 	testCases := []TestCase{
@@ -172,42 +172,42 @@ func TestNoiseFunctions(t *testing.T) {
 			name:            "random_noise",
 			numSamples:      1e6,
 			checkStatistics: true,
-			expectedMean:    0,
-			expectedStdDev:  A / math.Sqrt(3),
+			expectedMean:    0,                // by definition of uniform distribution
+			expectedStdDev:  A / math.Sqrt(3), // by definition of uniform distribution
 			checkBounds:     true,
 			lowerBound:      -A,
 			upperBound:      A,
-			checkStepSize:   false,
+			checkNoiseDelta: false,
 		},
 		{
 			name:            "gaussian_noise",
 			numSamples:      1e6,
 			checkStatistics: true,
-			expectedMean:    0,
-			expectedStdDev:  A,
+			expectedMean:    0, // by definition of normal distribution
+			expectedStdDev:  A, // by definition of normal distribution
 			checkBounds:     false,
-			checkStepSize:   false,
+			checkNoiseDelta: false,
 		},
 		{
 			name:            "exponential_noise",
 			numSamples:      1e6,
 			checkStatistics: true,
-			expectedMean:    A,
-			expectedStdDev:  A,
+			expectedMean:    A, // by definition of exponential distribution
+			expectedStdDev:  A, // by definition of exponential distribution
 			checkBounds:     true,
-			lowerBound:      0,
-			upperBound:      math.Inf(1),
-			checkStepSize:   false,
+			lowerBound:      0,           // exponential distribution always non-negative values
+			upperBound:      math.Inf(1), // exponential distribution is unbounded at the upper end
+			checkNoiseDelta: false,
 		},
 		{
 			name:            "random_walk",
 			numSamples:      100, // statistics not being checked so fewer samples required
 			checkStatistics: false,
 			checkBounds:     true,
-			lowerBound:      -A,
+			lowerBound:      -A, // bounds are defined within mathfuncs.randomWalk
 			upperBound:      A,
-			checkStepSize:   true,
-			maxStepSize:     A / 20.0,
+			checkNoiseDelta: true,
+			maxDelta:        A / 20.0, // maximum step size is defined within mathfuncs.randomWalk
 		},
 	}
 
@@ -223,8 +223,8 @@ func TestNoiseFunctions(t *testing.T) {
 				if tc.checkBounds {
 					assert.True(t, x >= tc.lowerBound && x <= tc.upperBound, "value out of bounds")
 				}
-				if tc.checkStepSize {
-					assert.True(t, math.Abs(x-prevValue) <= tc.maxStepSize, "step size larger than max step size")
+				if tc.checkNoiseDelta {
+					assert.True(t, math.Abs(x-prevValue) <= tc.maxDelta, "step size larger than max step size")
 				}
 				sum += x
 				sumSq += x * x
