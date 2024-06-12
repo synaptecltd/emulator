@@ -6,11 +6,15 @@ import (
 	"math/rand/v2"
 )
 
-// A map between string names and functions
-var trendFunctions = map[string]func(float64, float64, float64) float64{
+// A mathematical function y=f(t,A,T). Takes amplitude, A, and period, T,
+// as inputs and returns the value of the function at time, t.
+type TrendFunction func(t, A, T float64) float64
+
+// A map between string name and trendFunction pairs
+var trendFunctions = map[string]TrendFunction{
 	"linear":            linearRamp, // default
-	"sine":              sinusoid,
-	"cosine":            cosine,
+	"sine":              sineWave,
+	"cosine":            cosineWave,
 	"exponential":       exponentialRamp,
 	"parabolic":         parabolicRamp,
 	"step":              stepFunction,
@@ -24,7 +28,7 @@ var trendFunctions = map[string]func(float64, float64, float64) float64{
 }
 
 // Returns the named trend function. Defaults to linear if name is empty.
-func GetTrendFunctionFromName(name string) (func(float64, float64, float64) float64, error) {
+func GetTrendFunctionFromName(name string) (TrendFunction, error) {
 	// Default to linear if no name is provided
 	if name == "" {
 		return trendFunctions["linear"], nil
@@ -44,15 +48,15 @@ func linearRamp(t, A, T float64) float64 {
 	return m * t
 }
 
-// Returns a sinusoid y=A*sin(2*pi*t/T) where A is the amplitude,
+// Returns a sine wave y=A*sin(2*pi*t/T) where A is the amplitude,
 // T is the period, and t is elapsed time.
-func sinusoid(t, A, T float64) float64 {
+func sineWave(t, A, T float64) float64 {
 	return A * math.Sin(2*math.Pi*t/T)
 }
 
 // Returns a cosine wave y=A*cos(2*pi*t/T) where A is the amplitude,
 // T is the period, and t is elapsed time.
-func cosine(t, A, T float64) float64 {
+func cosineWave(t, A, T float64) float64 {
 	return A * math.Cos(2*math.Pi*t/T)
 }
 
