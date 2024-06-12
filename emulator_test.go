@@ -43,11 +43,6 @@ func createEmulatorForBenchmark(samplingRate int, phaseOffsetDeg float64) *Emula
 func createEmulator(samplingRate int, phaseOffsetDeg float64) *Emulator {
 	emu := NewEmulator(samplingRate, 50.0)
 
-	anomaly := Anomaly{
-		InstantaneousAnomalyMagnitude:   30,
-		InstantaneousAnomalyProbability: 0.01,
-	}
-
 	emu.V = &ThreePhaseEmulation{
 		PosSeqMag:   400000.0 / math.Sqrt(3) * math.Sqrt(2),
 		NoiseMax:    0.000001,
@@ -65,7 +60,10 @@ func createEmulator(samplingRate int, phaseOffsetDeg float64) *Emulator {
 		MeanTemperature: 30.0,
 		NoiseMax:        0.01,
 		Anomaly: AnomalyContainer{
-			anomalyKey: &anomaly,
+			anomalyKey: {
+				InstantaneousAnomalyMagnitude:   30,
+				InstantaneousAnomalyProbability: 0.01,
+			},
 		},
 	}
 	return emu
