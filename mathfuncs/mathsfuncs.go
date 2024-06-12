@@ -21,6 +21,7 @@ var trendFunctions = map[string]TrendFunction{
 	"square":            squareWave,
 	"sawtooth":          sawtoothWave,
 	"impulse":           impulseTrain,
+	"impulse_varying":   impulseTrainVaryingMagnitude,
 	"random_noise":      randomNoise,
 	"gaussian_noise":    gaussianNoise,
 	"exponential_noise": exponentialNoise,
@@ -105,6 +106,13 @@ func impulseTrain(t, A, T float64) float64 {
 	} else {
 		return 0
 	}
+}
+
+// Returns a spike every period T, with an amplitude which is
+// normally distributed about A. Each spike has a width of 1 microsecond.
+func impulseTrainVaryingMagnitude(t, A, T float64) float64 {
+	fixedAmplitudeImpulse := impulseTrain(t, A, T)
+	return fixedAmplitudeImpulse * rand.NormFloat64()
 }
 
 // Returns additional random (uniform) noise of amplitude A.

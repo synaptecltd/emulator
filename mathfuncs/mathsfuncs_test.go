@@ -130,6 +130,14 @@ func TestDeterministicTrendFunctions(t *testing.T) {
 			expected: M, // impulse at t==T
 			isError:  false,
 		},
+		{
+			name:     "impulse_varying",
+			t:        x / 2.0,
+			A:        M,
+			T:        x,
+			expected: 0.0, // no impulse when t!=T
+			isError:  false,
+		},
 		// Add more test cases for other trend functions
 	}
 
