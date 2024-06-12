@@ -153,6 +153,8 @@ func TestDeterministicTrendFunctions(t *testing.T) {
 // Tests for non-deteministic trend functions
 func TestNoiseFunctions(t *testing.T) {
 	A := 1.0 + rand.Float64()*9.0 // ampltiude of noise (between 1 and 10)
+	nSamples := int(1e6)          // default number of samples to generate for statistics tests
+	allowedDelta := 0.1           // allowed absolute difference between expected values and results for statistics tests
 
 	type TestCase struct {
 		name            string  // name of the function, defined in the TrendFunctions map
@@ -170,7 +172,7 @@ func TestNoiseFunctions(t *testing.T) {
 	testCases := []TestCase{
 		{
 			name:            "random_noise",
-			numSamples:      1e6,
+			numSamples:      nSamples,
 			checkStatistics: true,
 			expectedMean:    0,                // by definition of uniform distribution
 			expectedStdDev:  A / math.Sqrt(3), // by definition of uniform distribution
@@ -181,7 +183,7 @@ func TestNoiseFunctions(t *testing.T) {
 		},
 		{
 			name:            "gaussian_noise",
-			numSamples:      1e6,
+			numSamples:      nSamples,
 			checkStatistics: true,
 			expectedMean:    0, // by definition of normal distribution
 			expectedStdDev:  A, // by definition of normal distribution
@@ -190,7 +192,7 @@ func TestNoiseFunctions(t *testing.T) {
 		},
 		{
 			name:            "exponential_noise",
-			numSamples:      1e6,
+			numSamples:      nSamples,
 			checkStatistics: true,
 			expectedMean:    A, // by definition of exponential distribution
 			expectedStdDev:  A, // by definition of exponential distribution
@@ -235,9 +237,10 @@ func TestNoiseFunctions(t *testing.T) {
 				mean := sum / float64(tc.numSamples)
 				variance := sumSq/float64(tc.numSamples) - mean*mean
 				stddev := math.Sqrt(variance)
-				// Low value of 0.1 used for the delta: non-exact values due to small sample sizes
-				assert.InDelta(t, tc.expectedMean, mean, 0.1)
-				assert.InDelta(t, tc.expectedStdDev, stddev, 0.1)
+				// Non-exact values due to small sample sizes, so use high values of allowed
+				// delta to prevent random test failures
+				assert.InDelta(t, tc.expectedMean, mean, allowedDelta)
+				assert.InDelta(t, tc.expectedStdDev, stddev, allowedDelta)
 			}
 		})
 	}
