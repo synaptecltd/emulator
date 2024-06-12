@@ -52,17 +52,22 @@ func stepAllAnomalies(anomalies AnomalyContainer, r *rand.Rand, Ts float64) floa
 func (a *Anomaly) stepAnomaly(r *rand.Rand, Ts float64) float64 {
 	// Set internal state: get the function to use for the trend anomaly if not set
 	if a.trendFunc == nil {
-		trendFunc, err := mathfuncs.GetTrendFunctionFromName(a.TrendFuncName)
-		if err != nil {
-			panic(err)
-		}
-		a.trendFunc = trendFunc
+		a.initTrendFunc()
 	}
 
 	instantaneousAnomalyDelta := a.getInstantaneousDelta(r)
 	trendAnomalyDelta := a.getTrendDelta(Ts)
 
 	return instantaneousAnomalyDelta + trendAnomalyDelta
+}
+
+// Initializes the trend function to use for the trend anomaly.
+func (a *Anomaly) initTrendFunc() {
+	trendFunc, err := mathfuncs.GetTrendFunctionFromName(a.TrendFuncName)
+	if err != nil {
+		panic(err)
+	}
+	a.trendFunc = trendFunc
 }
 
 // Returns the change in signal caused by the instantaneous anomaly this timestep.
