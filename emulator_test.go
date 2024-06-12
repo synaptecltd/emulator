@@ -64,7 +64,7 @@ func createEmulator(samplingRate int, phaseOffsetDeg float64) *Emulator {
 	emu.T = &TemperatureEmulation{
 		MeanTemperature: 30.0,
 		NoiseMax:        0.01,
-		Anomaly: map[string]*Anomaly{
+		Anomaly: AnomalyContainer{
 			anomalyKey: &anomaly,
 		},
 	}
@@ -77,7 +77,7 @@ func createEmulatorForAnomaly(samplingRate int) *Emulator {
 	emu.I = &ThreePhaseEmulation{
 		PosSeqMag:   350.0,
 		PhaseOffset: 0.0,
-		PosSeqMagAnomaly: map[string]*Anomaly{
+		PosSeqMagAnomaly: AnomalyContainer{
 			anomalyKey: {
 				IsTrendAnomaly:        true,
 				IsRisingTrendAnomaly:  true,
