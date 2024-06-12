@@ -1,6 +1,6 @@
 package emulator
 
-import "math/rand"
+import "math/rand/v2"
 
 type Anomaly struct {
 	// instantaneous anomalies, based on probability factor

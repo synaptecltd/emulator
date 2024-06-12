@@ -1,8 +1,7 @@
 package emulator
 
 import (
-	"math/rand"
-	"time"
+	"math/rand/v2"
 )
 
 type SagEmulation struct {
@@ -17,7 +16,6 @@ type SagEmulation struct {
 }
 
 func (e *SagEmulation) stepSag(r *rand.Rand) {
-	r.Seed(time.Now().UnixNano())
 	e.TotalStrain = e.MeanStrain * r.Float64()
 	e.Sag = e.MeanSag * r.Float64()
 	e.CalculatedTemperature = e.MeanCalculatedTemperature * r.Float64()
