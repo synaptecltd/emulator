@@ -144,10 +144,10 @@ func TestTemperatureEmulationAnomalies_Anomalies(t *testing.T) {
 
 func TestTemperatureEmulationAnomalies_RisingTrend(t *testing.T) {
 	emulator := createEmulator(14400, 0)
-	emulator.T.Anomaly[anomalyKey].IsTrendAnomaly = true
-	emulator.T.Anomaly[anomalyKey].TrendAnomalyMagnitude = 30.0
+	emulator.T.Anomaly[anomalyKey].Ion = true
+	emulator.T.Anomaly[anomalyKey].Magnitude = 30.0
 	emulator.T.Anomaly[anomalyKey].TrendAnomalyDuration = 10
-	emulator.T.Anomaly[anomalyKey].IsRisingTrendAnomaly = true
+	emulator.T.Anomaly[anomalyKey].InvertTrend = true
 
 	step := 0.0
 	var results []float64
@@ -166,10 +166,10 @@ func TestTemperatureEmulationAnomalies_RisingTrend(t *testing.T) {
 
 func TestTemperatureEmulationAnomalies_DecreasingTrend(t *testing.T) {
 	emulator := createEmulator(1, 0)
-	emulator.T.Anomaly[anomalyKey].IsTrendAnomaly = true
-	emulator.T.Anomaly[anomalyKey].TrendAnomalyMagnitude = 30.0
+	emulator.T.Anomaly[anomalyKey].Ion = true
+	emulator.T.Anomaly[anomalyKey].Magnitude = 30.0
 	emulator.T.Anomaly[anomalyKey].TrendAnomalyDuration = 10
-	emulator.T.Anomaly[anomalyKey].IsRisingTrendAnomaly = false
+	emulator.T.Anomaly[anomalyKey].InvertTrend = false
 	step := 0
 	var results []float64
 	for step < 10 {
@@ -203,7 +203,7 @@ func TestCurrentPosSeqAnomalies_RisingTrend(t *testing.T) {
 			maxMag = value
 		}
 	}
-	targetMag := emulator.I.PosSeqMag + emulator.I.PosSeqMagAnomaly[anomalyKey].TrendAnomalyMagnitude
+	targetMag := emulator.I.PosSeqMag + emulator.I.PosSeqMagAnomaly[anomalyKey].Magnitude
 
 	assert.True(t, FloatingPointEqual(targetMag, maxMag, 50))
 }

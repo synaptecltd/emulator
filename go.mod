@@ -3,8 +3,11 @@ module github.com/synaptecltd/emulator
 go 1.22
 
 require (
+	github.com/google/uuid v1.6.0
+	github.com/mitchellh/mapstructure v1.5.0
 	github.com/stretchr/testify v1.8.1
 	github.com/teknico/sigourney v0.0.0-20160105013017-b52044632571
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
