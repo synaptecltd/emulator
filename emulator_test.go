@@ -10,9 +10,9 @@ import (
 
 var anomalyKey = "test"
 
-// benchmark emulator performance
+// Benchmark emulator performance
 func BenchmarkEmulator(b *testing.B) {
-	emu := createEmulatorForBenchmark(4000, 0)
+	emu := createEmulator(4000, 0)
 
 	for i := 0; i < b.N; i++ {
 		for j := 0; j < 4000; j++ {
@@ -21,26 +21,7 @@ func BenchmarkEmulator(b *testing.B) {
 	}
 }
 
-func createEmulatorForBenchmark(samplingRate int, phaseOffsetDeg float64) *Emulator {
-	emu := NewEmulator(samplingRate, 50.0)
-
-	emu.V = &ThreePhaseEmulation{
-		PosSeqMag:   400000.0 / math.Sqrt(3) * math.Sqrt(2),
-		NoiseMag:    0.000001,
-		PhaseOffset: phaseOffsetDeg * math.Pi / 180.0,
-	}
-	emu.I = &ThreePhaseEmulation{
-		PosSeqMag:       500.0,
-		PhaseOffset:     phaseOffsetDeg * math.Pi / 180.0,
-		HarmonicNumbers: []float64{5, 7, 11, 13, 17, 19, 23, 25},
-		HarmonicMags:    []float64{0.2164, 0.1242, 0.0892, 0.0693, 0.0541, 0.0458, 0.0370, 0.0332},
-		HarmonicAngs:    []float64{171.5, 100.4, -52.4, 128.3, 80.0, 2.9, -146.8, 133.9},
-		NoiseMag:        0.000001,
-	}
-
-	return emu
-}
-
+// Returns a voltage and current emulator with the specified sampling rate and phase offset.
 func createEmulator(samplingRate int, phaseOffsetDeg float64) *Emulator {
 	emu := NewEmulator(samplingRate, 50.0)
 
@@ -61,11 +42,7 @@ func createEmulator(samplingRate int, phaseOffsetDeg float64) *Emulator {
 	return emu
 }
 
-func FloatingPointEqual(expected float64, actual float64, threshold float64) bool {
-	absDiff := math.Abs(expected - actual)
-	return absDiff < threshold
-}
-
+// Returns mean of slice of float64 values
 func mean(values []float64) float64 {
 	var sum float64
 	for _, value := range values {
@@ -74,8 +51,9 @@ func mean(values []float64) float64 {
 	return sum / float64(len(values))
 }
 
+// Assert that an instantaneous anomaly that never triggers is never active
 func TestTemperatureEmulationAnomalies_NoAnomalies(t *testing.T) {
-	emulator := createEmulator(14400, 0)
+	emulator := NewEmulator(14400, 0.0)
 
 	emulator.T = &TemperatureEmulation{
 		MeanTemperature: 30.0,
@@ -83,7 +61,7 @@ func TestTemperatureEmulationAnomalies_NoAnomalies(t *testing.T) {
 		Anomaly: anomaly.Container{
 			anomalyKey: &anomaly.InstantaneousAnomaly{
 				Magnitude:   30,
-				Probability: 0.0,
+				Probability: 0.0, // never triggers
 			},
 		},
 	}
@@ -98,8 +76,10 @@ func TestTemperatureEmulationAnomalies_NoAnomalies(t *testing.T) {
 	assert.NotContains(t, results, true)
 }
 
+// Assert that temperature emulation with 50% probability of anomalies generates
+// approximately 50% of data with anomalies
 func TestTemperatureEmulationAnomalies_Anomalies(t *testing.T) {
-	emulator := createEmulator(14400, 0)
+	emulator := NewEmulator(14400, 0.0)
 
 	emulator.T = &TemperatureEmulation{
 		MeanTemperature: 30.0,
@@ -130,13 +110,14 @@ func TestTemperatureEmulationAnomalies_Anomalies(t *testing.T) {
 	assert.Contains(t, results, true)
 
 	fractionAnomalies := float64(len(anomalyValues)) / float64(step)
-	assert.True(t, FloatingPointEqual(0.5, fractionAnomalies, 0.1))
-
+	assert.InDelta(t, 0.5, fractionAnomalies, 0.1)
 	assert.True(t, mean(anomalyValues) > mean(normalValues))
 }
 
+// Assert that temperature emulation with a rising linear ramp anomaly results in values
+// above the mean
 func TestTemperatureEmulationAnomalies_RisingTrend(t *testing.T) {
-	emulator := createEmulator(14400, 0)
+	emulator := NewEmulator(14400, 0.0)
 
 	trendParams := anomaly.TrendParams{
 		Magnitude: 30.0,
@@ -160,17 +141,15 @@ func TestTemperatureEmulationAnomalies_RisingTrend(t *testing.T) {
 		emulator.Step()
 		results = append(results, emulator.T.T)
 		step += 1
-
-		// if step < float64(emulator.SamplingRate) {
-		// 	assert.NotEqual(t, 0, emulator.T.Anomaly[anomalyKey].GetElapsedTrendIndex())
-		// }
 	}
 
 	assert.True(t, mean(results) > emulator.T.MeanTemperature)
 }
 
+// Assert that temperature emulation with a rising linear ramp anomaly results in values
+// below the mean
 func TestTemperatureEmulationAnomalies_DecreasingTrend(t *testing.T) {
-	emulator := createEmulator(1, 0)
+	emulator := NewEmulator(1.0, 0.0)
 
 	// Create an anomaly with a decreasing trend and show its average value is below the mean
 	trendParams := anomaly.TrendParams{
@@ -201,6 +180,8 @@ func TestTemperatureEmulationAnomalies_DecreasingTrend(t *testing.T) {
 	assert.True(t, mean(results) < emulator.T.MeanTemperature)
 }
 
+// Assert that current emulation with a rising linear ramp anomaly results in values
+// that reach the target magnitude + mean value
 func TestCurrentPosSeqAnomalies_RisingTrend(t *testing.T) {
 	emulator := NewEmulator(4000.0, 50.0)
 
@@ -225,10 +206,6 @@ func TestCurrentPosSeqAnomalies_RisingTrend(t *testing.T) {
 		emulator.Step()
 		results = append(results, emulator.I.A)
 		step += 1
-
-		// if step < float64(emulator.SamplingRate) {
-		// 	assert.NotEqual(t, 0, emulator.I.PosSeqMagAnomaly[anomalyKey].TrendAnomalyIndex)
-		// }
 	}
 
 	// find maxMag value of array
@@ -239,6 +216,5 @@ func TestCurrentPosSeqAnomalies_RisingTrend(t *testing.T) {
 		}
 	}
 	targetMag := emulator.I.PosSeqMag + trendParams.Magnitude
-
-	assert.True(t, FloatingPointEqual(targetMag, maxMag, 50))
+	assert.InDelta(t, targetMag, maxMag, 50)
 }
