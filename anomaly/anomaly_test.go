@@ -1,6 +1,8 @@
 package anomaly_test
 
 import (
+	"fmt"
+	"math/rand/v2"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,28 +11,40 @@ import (
 )
 
 func TestUnmarshalYAML(t *testing.T) {
+	startDelay := rand.Float64()
+	duration := rand.Float64()
+	probability := rand.Float64()
+
 	// Define a YAML string that represents a trend anomaly.
-	yamlStr := `
+	yamlStr := fmt.Sprintf(`
 trend1:
   type: trend
-  start_delay: 0.1
-  duration: 0.2
-trend2:
-  type: trend
-  start_delay: 0.5
-  duration: 0.1
+  start_delay: %f
+  duration: %f
 inst1:
   type: instantaneous
-  InstantaneousAnomalyProbability: 0.01
-`
+  probability: %f
+`,
+		startDelay, duration, probability)
+
 	container := make(anomaly.Container)
 	err := yaml.Unmarshal([]byte(yamlStr), &container)
 	assert.NoError(t, err)
 
-	t.Logf("container: %v", container)
+	trendAnomaly, _ := anomaly.NewTrendAnomaly(anomaly.TrendParams{
+		StartDelay: startDelay,
+		Duration:   duration,
+	})
 
-	for _, hello := range container {
-		t.Logf("anomalyparams: %v", hello)
+	instAnomaly := &anomaly.InstantaneousAnomaly{Probability: probability}
+
+	// Todo fix this
+	for key, hello := range container {
+		if key == "trend1" {
+			assert.Equal(t, trendAnomaly, hello)
+		} else {
+			assert.Equal(t, instAnomaly, hello)
+		}
 	}
 }
 

@@ -17,6 +17,7 @@ func (ia *InstantaneousAnomaly) UnmarshalYAML(unmarshal func(interface{}) error)
 	}
 
 	// Add any additional logic here if needed
+	// TODO : Checks for valid values are actually needed. Probability needs to be private as does instantAnomalyActive
 
 	return nil
 }
