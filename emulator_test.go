@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	anomaly "github.com/synaptecltd/emulator/emulatoranomaly"
+	"github.com/synaptecltd/emulator/anomaly"
 )
 
 var anomalyKey = "test"

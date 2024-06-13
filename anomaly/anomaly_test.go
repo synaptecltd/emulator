@@ -1,8 +1,10 @@
-package emulatoranomaly
+package anomaly_test
 
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/synaptecltd/emulator/anomaly"
 	"gopkg.in/yaml.v2"
 )
 
@@ -21,15 +23,23 @@ inst1:
   type: instantaneous
   InstantaneousAnomalyProbability: 0.01
 `
-	container := make(Container)
+	container := make(anomaly.Container)
 	err := yaml.Unmarshal([]byte(yamlStr), &container)
-	if err != nil {
-		// handle error
-	}
+	assert.NoError(t, err)
 
 	t.Logf("container: %v", container)
 
 	for _, hello := range container {
 		t.Logf("anomalyparams: %v", hello)
 	}
+}
+
+func TestGetTypeAsString(t *testing.T) {
+	instAnomaly := anomaly.InstantaneousAnomaly{}
+	expected := "instantaneous"
+	assert.Equal(t, expected, instAnomaly.TypeAsString())
+
+	trendAnomaly, _ := anomaly.NewTrendAnomaly(anomaly.TrendParams{})
+	expected = "trend"
+	assert.Equal(t, expected, trendAnomaly.TypeAsString())
 }

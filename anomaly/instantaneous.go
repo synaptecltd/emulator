@@ -1,4 +1,4 @@
-package emulatoranomaly
+package anomaly
 
 import "math/rand/v2"
 

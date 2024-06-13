@@ -4,7 +4,7 @@ import (
 	"math"
 	"math/rand/v2"
 
-	anomaly "github.com/synaptecltd/emulator/emulatoranomaly"
+	"github.com/synaptecltd/emulator/anomaly"
 	"github.com/teknico/sigourney/fast"
 )
 
