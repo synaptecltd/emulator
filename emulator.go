@@ -39,8 +39,7 @@ type Emulator struct {
 	V *ThreePhaseEmulation `yaml:"VoltageEmulator,omitempty"` // Voltage Emulator
 	I *ThreePhaseEmulation `yaml:"CurrentEmulator,omitempty"` // Current Emulator
 
-	T   *TemperatureEmulation `yaml:"TemperatureEmulator,omitempty"` // Temperature Emulation
-	Sag *SagEmulation         `yaml:"SagEmulator,omitempty"`         // Sag Emulator
+	T *TemperatureEmulation `yaml:"TemperatureEmulator,omitempty"` // Temperature Emulation
 
 	// common state
 	SmpCnt                     int `yaml:"-"`
@@ -127,9 +126,6 @@ func (e *Emulator) Step() {
 	}
 	if e.T != nil {
 		e.T.stepTemperature(e.r, e.Ts)
-	}
-	if e.Sag != nil {
-		e.Sag.stepSag(e.r)
 	}
 
 	e.SmpCnt++
