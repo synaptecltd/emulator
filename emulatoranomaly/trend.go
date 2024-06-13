@@ -54,8 +54,6 @@ func (t *trendAnomaly) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		return err
 	}
 
-	// Need checkers for startDelay, duration, funcName
-
 	// Copy fields from newTrend to t
 	*t = *trendAnomaly
 

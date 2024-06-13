@@ -13,10 +13,10 @@ type Container map[string]AnomalyInterface
 
 // AnomalyInterface is the interface for all anomaly types (trends, instantaneous, etc).
 type AnomalyInterface interface {
-	UnmarshalYAML(unmarshal func(interface{}) error) error
-	TypeAsString() string
-	GetIsAnomalyActive() bool
-	stepAnomaly(r *rand.Rand, Ts float64) float64
+	UnmarshalYAML(unmarshal func(interface{}) error) error // Unmarshals an anomaly entry into the correct type based on the type field
+	TypeAsString() string                                  // Returns the anomaly type as a string
+	GetIsAnomalyActive() bool                              // Returns whether the anomaly is active this timestep
+	stepAnomaly(r *rand.Rand, Ts float64) float64          // Steps the internal time state of an anomaly and returns the change in signal caused by the anomaly
 }
 
 // UnmarshalYAML unmarshals an anomaly entry into the correct type base on the type field.

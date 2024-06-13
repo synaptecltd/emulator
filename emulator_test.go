@@ -82,8 +82,8 @@ func TestTemperatureEmulationAnomalies_NoAnomalies(t *testing.T) {
 		NoiseMax:        0.01,
 		Anomaly: anomaly.Container{
 			anomalyKey: &anomaly.InstantaneousAnomaly{
-				InstantaneousAnomalyMagnitude:   30,
-				InstantaneousAnomalyProbability: 0.0,
+				Magnitude:   30,
+				Probability: 0.0,
 			},
 		},
 	}
@@ -106,8 +106,8 @@ func TestTemperatureEmulationAnomalies_Anomalies(t *testing.T) {
 		NoiseMax:        0.01,
 		Anomaly: anomaly.Container{
 			anomalyKey: &anomaly.InstantaneousAnomaly{
-				InstantaneousAnomalyMagnitude:   30,
-				InstantaneousAnomalyProbability: 0.5,
+				Magnitude:   30,
+				Probability: 0.5,
 			},
 		},
 	}
