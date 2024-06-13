@@ -32,7 +32,7 @@ const EmulatedFaultCurrentMagnitude = 80
 type Emulator struct {
 	// common inputs
 	SamplingRate int     `yaml:"SamplingRate"` // The sampling rate of the emulator
-	Ts           float64 `yaml:"Ts"`           // The time step for a given sampling rate
+	Ts           float64 `yaml:"Ts"`           // The time step or sampling period (=1/SamplingRate)
 	Fnom         float64 `yaml:"Fnom"`         // Nominal frequency
 	Fdeviation   float64 `yaml:"Fdeviation"`   // Frequency deviation
 
@@ -87,6 +87,8 @@ func (e *Emulator) StartEvent(eventType int) {
 	}
 }
 
+// Returns a new Emulator instance with a given sampling rate and frequency.
+// The emulator's random seed is initialized with a random value.
 func NewEmulator(samplingRate int, frequency float64) *Emulator {
 	emu := &Emulator{
 		SamplingRate: samplingRate,
@@ -98,6 +100,12 @@ func NewEmulator(samplingRate int, frequency float64) *Emulator {
 	emu.r = rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64()))
 
 	return emu
+}
+
+// Sets the random seed for the emulator. This can be used to
+// generate identical random events across multiple runs.
+func (e *Emulator) SetRandomSeed(seed uint64) {
+	e.r = rand.New(rand.NewPCG(seed, seed))
 }
 
 // Step performs one iteration of the waveform generation for the given time step, Ts

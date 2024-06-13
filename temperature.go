@@ -1,24 +1,21 @@
 package emulator
 
 import (
-	"math"
 	"math/rand/v2"
 )
 
 type TemperatureEmulation struct {
-	MeanTemperature float64 `yaml:"MeanTemperature"`         // Mean temperature
-	NoiseMax        float64 `yaml:"NoiseMax"`                // Maximum noise
-	ModulationMag   float64 `yaml:"ModulationMag,omitempty"` // Magnitude modulation
-
-	Anomaly Anomaly `yaml:"Anomaly"` // Anomaly
-
-	T float64 `yaml:"-"`
+	MeanTemperature float64          `yaml:"MeanTemperature"` // mean temperature
+	NoiseMax        float64          `yaml:"NoiseMax"`        // magnitude of Gaussian noise
+	Anomaly         AnomalyContainer `yaml:"Anomaly"`         // anomalies
+	T               float64          `yaml:"-"`               // present value of temperature
 }
 
+// Steps the temperature emulation forward by one time step. The new temperature is
+// calculated as the mean temperature + Gaussian noise + anomalies (if present).
 func (t *TemperatureEmulation) stepTemperature(r *rand.Rand, Ts float64) {
-	varyingT := t.MeanTemperature * (1 + t.ModulationMag*math.Cos(1000.0*Ts))
+	t.T = t.MeanTemperature + r.NormFloat64()*t.NoiseMax*t.MeanTemperature
 
-	totalAnomalyDelta := t.Anomaly.stepAnomaly(r, Ts)
-
-	t.T = varyingT + r.NormFloat64()*t.NoiseMax*t.MeanTemperature + totalAnomalyDelta
+	anomalyValues := stepAllAnomalies(t.Anomaly, r, Ts)
+	t.T += anomalyValues
 }

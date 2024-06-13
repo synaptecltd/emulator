@@ -11,23 +11,23 @@ const TwoPiOverThree = 2 * math.Pi / 3
 
 type ThreePhaseEmulation struct {
 	// inputs
-	PosSeqMag       float64   `yaml:"PosSeqMag"`                      // Positive Sequence Magnitude
-	PhaseOffset     float64   `yaml:"PhaseOffset,omitempty"`          // Phase Offset
-	NegSeqMag       float64   `yaml:"NegSeqMag,omitempty"`            // Negative Sequence Magnitude
-	NegSeqAng       float64   `yaml:"NegSeqAng,omitempty"`            // Negative Sequence Angle
-	ZeroSeqMag      float64   `yaml:"ZeroSeqMag,omitempty"`           // Zero Sequence Magnitude
-	ZeroSeqAng      float64   `yaml:"ZeroSeqAng,omitempty"`           // Zero Sequence Angle
-	HarmonicNumbers []float64 `yaml:"HarmonicNumbers,flow,omitempty"` // Harmonic Numbers
-	HarmonicMags    []float64 `yaml:"HarmonicMags,flow,omitempty"`    // Harmonic magnitudes in pu, relative to PosSeqMag
-	HarmonicAngs    []float64 `yaml:"HarmonicAngs,flow,omitempty"`    // Harmonic Angles
-	NoiseMax        float64   `yaml:"NoiseMax,omitempty"`             // Maximum noise
+	PosSeqMag       float64   `yaml:"PosSeqMag"`                      // positive sequence magnitude
+	PhaseOffset     float64   `yaml:"PhaseOffset,omitempty"`          // phase offset
+	NegSeqMag       float64   `yaml:"NegSeqMag,omitempty"`            // negative sequence magnitude
+	NegSeqAng       float64   `yaml:"NegSeqAng,omitempty"`            // negative sequence angle
+	ZeroSeqMag      float64   `yaml:"ZeroSeqMag,omitempty"`           // zero sequence magnitude
+	ZeroSeqAng      float64   `yaml:"ZeroSeqAng,omitempty"`           // zero sequence angle
+	HarmonicNumbers []float64 `yaml:"HarmonicNumbers,flow,omitempty"` // harmonic numbers
+	HarmonicMags    []float64 `yaml:"HarmonicMags,flow,omitempty"`    // harmonic magnitudes in pu, relative to PosSeqMag
+	HarmonicAngs    []float64 `yaml:"HarmonicAngs,flow,omitempty"`    // harmonic angles
+	NoiseMax        float64   `yaml:"NoiseMax,omitempty"`             // magnitude of Gaussian noise
 
 	// define anomalies
-	PosSeqMagAnomaly Anomaly // positive sequence magnitude anomaly
-	PosSeqAngAnomaly Anomaly // positive sequence angle anomaly
-	PhaseAMagAnomaly Anomaly // phase A magnitude anomaly
-	FreqAnomaly      Anomaly // frequency anomaly
-	HarmonicsAnomaly Anomaly // harmonics magnitude anomaly
+	PosSeqMagAnomaly AnomalyContainer // positive sequence magnitude anomaly
+	PosSeqAngAnomaly AnomalyContainer // positive sequence angle anomaly
+	PhaseAMagAnomaly AnomalyContainer // phase A magnitude anomaly
+	FreqAnomaly      AnomalyContainer // frequency anomaly
+	HarmonicsAnomaly AnomalyContainer // harmonics magnitude anomaly
 
 	// event emulation
 	FaultPhaseAMag        float64 `yaml:"-"`
@@ -45,9 +45,11 @@ type ThreePhaseEmulation struct {
 	A, B, C float64 `yaml:"-"`
 }
 
+// Steps the three phase emulation forward by one time step. The new values are
+// defined based on magntiudes, noise values, anomalies and fault conditions.
 func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64, smpCnt int) {
 	// frequency anomaly
-	totalAnomalyDeltaFrequency := e.FreqAnomaly.stepAnomaly(r, Ts)
+	totalAnomalyDeltaFrequency := stepAllAnomalies(e.FreqAnomaly, r, Ts)
 	freqTotal := f + totalAnomalyDeltaFrequency
 
 	angle := (freqTotal*2*math.Pi*Ts + e.pAngle)
@@ -55,7 +57,7 @@ func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64
 	e.pAngle = angle
 
 	// positive sequence angle anomaly
-	totalAnomalyDeltaPosSeqAng := e.PosSeqAngAnomaly.stepAnomaly(r, Ts)
+	totalAnomalyDeltaPosSeqAng := stepAllAnomalies(e.PosSeqAngAnomaly, r, Ts)
 
 	PosSeqPhase := e.PhaseOffset + e.pAngle + (math.Pi * totalAnomalyDeltaPosSeqAng / 180.0)
 
@@ -71,11 +73,11 @@ func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64
 	}
 
 	// positive sequence magnitude anomaly
-	totalAnomalyDeltaPosSeqMag := e.PosSeqMagAnomaly.stepAnomaly(r, Ts)
+	totalAnomalyDeltaPosSeqMag := stepAllAnomalies(e.PosSeqMagAnomaly, r, Ts)
 	posSeqMag += totalAnomalyDeltaPosSeqMag
 
 	// phase A magnitude anomaly
-	anomalyPhaseA := e.PhaseAMagAnomaly.stepAnomaly(r, Ts)
+	anomalyPhaseA := stepAllAnomalies(e.PhaseAMagAnomaly, r, Ts)
 
 	// positive sequence
 	a1 := fast.Sin(PosSeqPhase) * (posSeqMag + anomalyPhaseA)
@@ -108,7 +110,7 @@ func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64
 		}
 	}
 
-	harmonicsScale := e.HarmonicsAnomaly.stepAnomaly(r, Ts)
+	harmonicsScale := stepAllAnomalies(e.HarmonicsAnomaly, r, Ts)
 	ah = ah * (1 + harmonicsScale)
 	bh = bh * (1 + harmonicsScale)
 	ch = ch * (1 + harmonicsScale)
@@ -124,6 +126,7 @@ func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64
 	e.C = c1 + c2 + abc0 + ch + rc
 }
 
+// Wraps the angle a to the range -pi to pi
 func wrapAngle(a float64) float64 {
 	if a > math.Pi {
 		return a - 2*math.Pi

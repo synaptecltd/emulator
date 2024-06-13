@@ -7,6 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var anomalyKey = "test"
+
 // benchmark emulator performance
 func BenchmarkEmulator(b *testing.B) {
 	emu := createEmulatorForBenchmark(4000, 0)
@@ -57,9 +59,11 @@ func createEmulator(samplingRate int, phaseOffsetDeg float64) *Emulator {
 	emu.T = &TemperatureEmulation{
 		MeanTemperature: 30.0,
 		NoiseMax:        0.01,
-		Anomaly: Anomaly{
-			InstantaneousAnomalyMagnitude:   30,
-			InstantaneousAnomalyProbability: 0.01,
+		Anomaly: AnomalyContainer{
+			anomalyKey: {
+				InstantaneousAnomalyMagnitude:   30,
+				InstantaneousAnomalyProbability: 0.01,
+			},
 		},
 	}
 	return emu
@@ -71,11 +75,13 @@ func createEmulatorForAnomaly(samplingRate int) *Emulator {
 	emu.I = &ThreePhaseEmulation{
 		PosSeqMag:   350.0,
 		PhaseOffset: 0.0,
-		PosSeqMagAnomaly: Anomaly{
-			IsTrendAnomaly:        true,
-			IsRisingTrendAnomaly:  true,
-			TrendAnomalyDuration:  10,
-			TrendAnomalyMagnitude: 1060.32,
+		PosSeqMagAnomaly: AnomalyContainer{
+			anomalyKey: {
+				IsTrendAnomaly:        true,
+				IsRisingTrendAnomaly:  true,
+				TrendAnomalyDuration:  10,
+				TrendAnomalyMagnitude: 1060.32,
+			},
 		},
 	}
 
@@ -98,12 +104,12 @@ func mean(values []float64) float64 {
 func TestTemperatureEmulationAnomalies_NoAnomalies(t *testing.T) {
 	emulator := createEmulator(14400, 0)
 
-	emulator.T.Anomaly.InstantaneousAnomalyProbability = 0
+	emulator.T.Anomaly[anomalyKey].InstantaneousAnomalyProbability = 0
 	step := 0
 	var results []bool
 	for step < 1e4 {
 		emulator.Step()
-		results = append(results, emulator.T.Anomaly.isInstantaneousAnomaly)
+		results = append(results, emulator.T.Anomaly[anomalyKey].InstantaneousAnomalyActive)
 		step += 1
 	}
 	assert.NotContains(t, results, true)
@@ -112,16 +118,16 @@ func TestTemperatureEmulationAnomalies_NoAnomalies(t *testing.T) {
 func TestTemperatureEmulationAnomalies_Anomalies(t *testing.T) {
 	emulator := createEmulator(14400, 0)
 
-	emulator.T.Anomaly.InstantaneousAnomalyProbability = 0.5
+	emulator.T.Anomaly[anomalyKey].InstantaneousAnomalyProbability = 0.5
 	step := 0
 	var results []bool
 	var normalValues []float64
 	var anomalyValues []float64
 	for step < 1e4 {
 		emulator.Step()
-		results = append(results, emulator.T.Anomaly.isInstantaneousAnomaly)
+		results = append(results, emulator.T.Anomaly[anomalyKey].InstantaneousAnomalyActive)
 
-		if emulator.T.Anomaly.isInstantaneousAnomaly == true {
+		if emulator.T.Anomaly[anomalyKey].InstantaneousAnomalyActive == true {
 			anomalyValues = append(anomalyValues, emulator.T.T)
 		} else {
 			normalValues = append(normalValues, emulator.T.T)
@@ -138,20 +144,20 @@ func TestTemperatureEmulationAnomalies_Anomalies(t *testing.T) {
 
 func TestTemperatureEmulationAnomalies_RisingTrend(t *testing.T) {
 	emulator := createEmulator(14400, 0)
-	emulator.T.Anomaly.IsTrendAnomaly = true
-	emulator.T.Anomaly.TrendAnomalyMagnitude = 30.0
-	emulator.T.Anomaly.TrendAnomalyDuration = 10
-	emulator.T.Anomaly.IsRisingTrendAnomaly = true
+	emulator.T.Anomaly[anomalyKey].IsTrendAnomaly = true
+	emulator.T.Anomaly[anomalyKey].TrendAnomalyMagnitude = 30.0
+	emulator.T.Anomaly[anomalyKey].TrendAnomalyDuration = 10
+	emulator.T.Anomaly[anomalyKey].IsRisingTrendAnomaly = true
 
 	step := 0.0
 	var results []float64
-	for step < emulator.T.Anomaly.TrendAnomalyDuration*float64(emulator.SamplingRate) {
+	for step < emulator.T.Anomaly[anomalyKey].TrendAnomalyDuration*float64(emulator.SamplingRate) {
 		emulator.Step()
 		results = append(results, emulator.T.T)
 		step += 1
 
 		if step < float64(emulator.SamplingRate) {
-			assert.NotEqual(t, 0, emulator.T.Anomaly.TrendAnomalyIndex)
+			assert.NotEqual(t, 0, emulator.T.Anomaly[anomalyKey].TrendAnomalyIndex)
 		}
 	}
 
@@ -160,10 +166,10 @@ func TestTemperatureEmulationAnomalies_RisingTrend(t *testing.T) {
 
 func TestTemperatureEmulationAnomalies_DecreasingTrend(t *testing.T) {
 	emulator := createEmulator(1, 0)
-	emulator.T.Anomaly.IsTrendAnomaly = true
-	emulator.T.Anomaly.TrendAnomalyMagnitude = 30.0
-	emulator.T.Anomaly.TrendAnomalyDuration = 10
-	emulator.T.Anomaly.IsRisingTrendAnomaly = false
+	emulator.T.Anomaly[anomalyKey].IsTrendAnomaly = true
+	emulator.T.Anomaly[anomalyKey].TrendAnomalyMagnitude = 30.0
+	emulator.T.Anomaly[anomalyKey].TrendAnomalyDuration = 10
+	emulator.T.Anomaly[anomalyKey].IsRisingTrendAnomaly = false
 	step := 0
 	var results []float64
 	for step < 10 {
@@ -180,13 +186,13 @@ func TestCurrentPosSeqAnomalies_RisingTrend(t *testing.T) {
 
 	step := 0.0
 	var results []float64
-	for step < emulator.I.PosSeqMagAnomaly.TrendAnomalyDuration*float64(emulator.SamplingRate) {
+	for step < emulator.I.PosSeqMagAnomaly[anomalyKey].TrendAnomalyDuration*float64(emulator.SamplingRate) {
 		emulator.Step()
 		results = append(results, emulator.I.A)
 		step += 1
 
 		if step < float64(emulator.SamplingRate) {
-			assert.NotEqual(t, 0, emulator.I.PosSeqMagAnomaly.TrendAnomalyIndex)
+			assert.NotEqual(t, 0, emulator.I.PosSeqMagAnomaly[anomalyKey].TrendAnomalyIndex)
 		}
 	}
 
@@ -197,7 +203,7 @@ func TestCurrentPosSeqAnomalies_RisingTrend(t *testing.T) {
 			maxMag = value
 		}
 	}
-	targetMag := emulator.I.PosSeqMag + emulator.I.PosSeqMagAnomaly.TrendAnomalyMagnitude
+	targetMag := emulator.I.PosSeqMag + emulator.I.PosSeqMagAnomaly[anomalyKey].TrendAnomalyMagnitude
 
 	assert.True(t, FloatingPointEqual(targetMag, maxMag, 50))
 }

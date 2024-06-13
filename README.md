@@ -14,19 +14,20 @@ Each `emulator` instance can implement up to one of each of: three-phase voltage
 // base parameters
 samplingRate := 14400
 freq := 50.0
+phaseOffsetDeg := 0.0
 
 // create an emulator instance
-emu := NewEmulator(samplingRate, freq)
+emu := emulator.NewEmulator(samplingRate, freq)
 
 // specify three-phase voltage parameters
-emu.V = &ThreePhaseEmulation{
+emu.V = &emulator.ThreePhaseEmulation{
     PosSeqMag:   400000.0 / math.Sqrt(3) * math.Sqrt(2),
     NoiseMax:    0.000001,
     PhaseOffset: phaseOffsetDeg * math.Pi / 180.0,
 }
 
 // specify three-phase current parameters
-emu.I = &ThreePhaseEmulation{
+emu.I = &emulator.ThreePhaseEmulation{
     PosSeqMag:       500.0,
     PhaseOffset:     phaseOffsetDeg * math.Pi / 180.0,
     HarmonicNumbers: []float64{5, 7, 11, 13, 17, 19, 23, 25},
@@ -36,21 +37,40 @@ emu.I = &ThreePhaseEmulation{
 }
 
 // specify temperature parameters
-emu.T = &TemperatureEmulation{
+emu.T = &emulator.TemperatureEmulation{
     MeanTemperature: 30.0,
     NoiseMax:        0.01,
-    Anomaly: Anomaly{
-        InstantaneousAnomalyMagnitude:   30,
-        InstantaneousAnomalyProbability: 0.01,
+    Anomaly: emulator.AnomalyContainer{
+        "ramp_and_spikes": {
+            InstantaneousAnomalyMagnitude:   30,
+            InstantaneousAnomalyProbability: 0.01,
+            InstantaneousAnomalyMagnitudeVariation: true,
+
+            IsTrendAnomaly:        true,
+            IsRisingTrendAnomaly:  true,
+            TrendAnomalyDuration:  0.2,
+            TrendStartDelay:       0.1,
+            TrendFuncName:         "linear",
+            TrendAnomalyMagnitude: 10,
+        },
+        "seasonality": {
+            IsTrendAnomaly:        true,
+            IsRisingTrendAnomaly:  true,
+            TrendAnomalyDuration:  1.0,
+            TrendStartDelay:       0,
+            TrendFuncName:         "sine",
+            TrendAnomalyMagnitude: 5,
+        },
+        // add more concurrent anomalies here
     },
 }
 
 // execute one full waveform period of samples using the Step() function
 step := 0
-var results []bool
+var results []float64
 for step < samplingRate {
-    emulator.Step()
-    results = append(results, emulator.T.Anomaly.isInstantaneousAnomaly)
+    emu.Step()
+    results = append(results, emu.T.T)
     step += 1
 }
 ```
@@ -59,7 +79,7 @@ for step < samplingRate {
 
 Two types of "anomaly" can be added to the data to create interesting scenarios:
 1. Instantaneous: based on a probability factor, activate an instantaneous change to the selected parameter
-2. Periodic "trends": apply a sawtooth shape to the parameter
+2. Periodic "trends": apply a continuous changes to the parameter, including ramps, sinusoids, and additional noise. See `./mathfuncs` for a full list.
 
 The parameter `TrendAnomalyMagnitude` has the following effects:
 
