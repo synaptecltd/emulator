@@ -21,7 +21,7 @@ type ThreePhaseEmulation struct {
 	HarmonicNumbers []float64 `yaml:"HarmonicNumbers,flow,omitempty"` // harmonic numbers
 	HarmonicMags    []float64 `yaml:"HarmonicMags,flow,omitempty"`    // harmonic magnitudes in pu, relative to PosSeqMag
 	HarmonicAngs    []float64 `yaml:"HarmonicAngs,flow,omitempty"`    // harmonic angles
-	NoiseMax        float64   `yaml:"NoiseMax,omitempty"`             // magnitude of Gaussian noise
+	NoiseMag        float64   `yaml:"NoiseMag,omitempty"`             // magnitude of Gaussian noise
 
 	// define anomalies
 	PosSeqMagAnomaly anomaly.Container // positive sequence magnitude anomalies
@@ -117,9 +117,9 @@ func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64
 	ch = ch * (1 + harmonicsScale)
 
 	// add noise, ensure worst case where noise is uncorrelated across phases
-	ra := r.NormFloat64() * e.NoiseMax * e.PosSeqMag
-	rb := r.NormFloat64() * e.NoiseMax * e.PosSeqMag
-	rc := r.NormFloat64() * e.NoiseMax * e.PosSeqMag
+	ra := r.NormFloat64() * e.NoiseMag * e.PosSeqMag
+	rb := r.NormFloat64() * e.NoiseMag * e.PosSeqMag
+	rc := r.NormFloat64() * e.NoiseMag * e.PosSeqMag
 
 	// combine the output for each phase
 	e.A = a1 + a2 + abc0 + ah + ra

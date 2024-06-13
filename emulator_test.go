@@ -26,7 +26,7 @@ func createEmulatorForBenchmark(samplingRate int, phaseOffsetDeg float64) *Emula
 
 	emu.V = &ThreePhaseEmulation{
 		PosSeqMag:   400000.0 / math.Sqrt(3) * math.Sqrt(2),
-		NoiseMax:    0.000001,
+		NoiseMag:    0.000001,
 		PhaseOffset: phaseOffsetDeg * math.Pi / 180.0,
 	}
 	emu.I = &ThreePhaseEmulation{
@@ -35,7 +35,7 @@ func createEmulatorForBenchmark(samplingRate int, phaseOffsetDeg float64) *Emula
 		HarmonicNumbers: []float64{5, 7, 11, 13, 17, 19, 23, 25},
 		HarmonicMags:    []float64{0.2164, 0.1242, 0.0892, 0.0693, 0.0541, 0.0458, 0.0370, 0.0332},
 		HarmonicAngs:    []float64{171.5, 100.4, -52.4, 128.3, 80.0, 2.9, -146.8, 133.9},
-		NoiseMax:        0.000001,
+		NoiseMag:        0.000001,
 	}
 
 	return emu
@@ -46,7 +46,7 @@ func createEmulator(samplingRate int, phaseOffsetDeg float64) *Emulator {
 
 	emu.V = &ThreePhaseEmulation{
 		PosSeqMag:   400000.0 / math.Sqrt(3) * math.Sqrt(2),
-		NoiseMax:    0.000001,
+		NoiseMag:    0.000001,
 		PhaseOffset: phaseOffsetDeg * math.Pi / 180.0,
 	}
 	emu.I = &ThreePhaseEmulation{
@@ -55,7 +55,7 @@ func createEmulator(samplingRate int, phaseOffsetDeg float64) *Emulator {
 		HarmonicNumbers: []float64{5, 7, 11, 13, 17, 19, 23, 25},
 		HarmonicMags:    []float64{0.2164, 0.1242, 0.0892, 0.0693, 0.0541, 0.0458, 0.0370, 0.0332},
 		HarmonicAngs:    []float64{171.5, 100.4, -52.4, 128.3, 80.0, 2.9, -146.8, 133.9},
-		NoiseMax:        0.000001,
+		NoiseMag:        0.000001,
 	}
 
 	return emu
@@ -79,7 +79,7 @@ func TestTemperatureEmulationAnomalies_NoAnomalies(t *testing.T) {
 
 	emulator.T = &TemperatureEmulation{
 		MeanTemperature: 30.0,
-		NoiseMax:        0.01,
+		NoiseMag:        0.01,
 		Anomaly: anomaly.Container{
 			anomalyKey: &anomaly.InstantaneousAnomaly{
 				Magnitude:   30,
@@ -103,7 +103,7 @@ func TestTemperatureEmulationAnomalies_Anomalies(t *testing.T) {
 
 	emulator.T = &TemperatureEmulation{
 		MeanTemperature: 30.0,
-		NoiseMax:        0.01,
+		NoiseMag:        0.01,
 		Anomaly: anomaly.Container{
 			anomalyKey: &anomaly.InstantaneousAnomaly{
 				Magnitude:   30,
@@ -148,7 +148,7 @@ func TestTemperatureEmulationAnomalies_RisingTrend(t *testing.T) {
 
 	emulator.T = &TemperatureEmulation{
 		MeanTemperature: 30.0,
-		NoiseMax:        0.01,
+		NoiseMag:        0.01,
 		Anomaly: anomaly.Container{
 			anomalyKey: trendAnomaly,
 		},
@@ -184,7 +184,7 @@ func TestTemperatureEmulationAnomalies_DecreasingTrend(t *testing.T) {
 
 	emulator.T = &TemperatureEmulation{
 		MeanTemperature: 30.0,
-		NoiseMax:        0.01,
+		NoiseMag:        0.01,
 		Anomaly: anomaly.Container{
 			anomalyKey: trendAnomaly,
 		},
