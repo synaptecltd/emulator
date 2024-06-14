@@ -78,6 +78,31 @@ for step < samplingRate {
 }
 ```
 
+Alternatively, emulators can be define via yaml:
+
+```go
+fileBytes, _ := os.ReadFile("foo.yml")
+emu.T = &emulator.TemperatureEmulation{}
+yaml.Unmarshal(fileBytes, emu.T)
+```
+
+where `foo.yml` is e.g.:
+
+```yaml
+MeanTemperature: 20.0
+NoiseMag: 0.1
+Anomaly:
+  repeating_ramp:   # anomaly name
+    type: trend     # type of anomaly: trend
+    magnitude: 5    # params
+    duration: 0.7
+  blips:            # anomaly name
+    type: spike     # type of anomaly: spike
+    probability: 0.01
+    magnitude: 2
+  # etc
+```
+
 ## Anomalies
 
 Two types of "anomaly" can be added to the data to create interesting scenarios:

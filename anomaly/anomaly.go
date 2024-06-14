@@ -34,6 +34,10 @@ type AnomalyInterface interface {
 
 // Unmarshals a generic anomaly entry into the correct type base on the anomaly "type" field.
 func (c *Container) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	// If the container is nil, create a new one
+	if *c == nil {
+		*c = make(Container)
+	}
 	var raw map[string]map[string]interface{}
 	if err := unmarshal(&raw); err != nil {
 		return err
