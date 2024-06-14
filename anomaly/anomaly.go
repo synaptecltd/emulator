@@ -5,6 +5,7 @@ import (
 	"math/rand/v2"
 
 	"github.com/google/uuid"
+	"github.com/synaptecltd/emulator/mathfuncs"
 	"gopkg.in/yaml.v2"
 )
 
@@ -25,7 +26,8 @@ type AnomalyInterface interface {
 	GetElapsedActivatedTime() float64 // Returns the time elapsed since the start of the active anomaly trend/burst
 	GetCountRepeats() uint64          // Returns the number of times the anomaly trend/burst has repeated so far
 	SetStartDelay(float64) error      // Sets the start time of anomalies in seconds if delay >= 0
-	SetFunctionByName(string) error   // Sets the function used to vary the parameters of an anomaly using a name string (see mathfuncs for available functions)
+	SetFunctionByName(
+		string, func(string) (mathfuncs.TrendFunction, error), *string, *mathfuncs.TrendFunction) error // Sets the function used to vary the parameters of an anomaly using a name string (see mathfuncs for available functions)
 
 	stepAnomaly(r *rand.Rand, Ts float64) float64 // Steps the internal time state of an anomaly and returns the change in signal caused by the anomaly
 }

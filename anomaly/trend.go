@@ -13,7 +13,7 @@ import (
 type trendAnomaly struct {
 	AnomalyBase
 
-	Magnitude   float64 // magnitude of trend anomaly
+	Magnitude   float64 // magnitude of trend anomaly, default 0
 	magFuncName string  // name of function to use to vary the trend magnitude, defaults to "linear" if empty
 	InvertTrend bool    // true inverts the trend function (multiplies by -1.0), default false (no inverting)
 
@@ -40,35 +40,34 @@ func (t *trendAnomaly) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		return err
 	}
 
-	// Use the duplicate's fields to initialise a new TrendAnomaly
+	// This performs checking for invalid values
 	trendAnomaly, err := NewTrendAnomaly(params)
 	if err != nil {
 		return err
 	}
 
-	// Copy fields from newTrend to t
+	// Copy fields to t
 	*t = *trendAnomaly
 
 	return nil
 }
 
-// Returns a TrendAnomaly with the specified parameters, checking for invalid values.
+// Returns a trendAnomaly pointer with the requested parameters, checking for invalid values.
 func NewTrendAnomaly(params TrendParams) (*trendAnomaly, error) {
 	trendAnomaly := &trendAnomaly{}
 
+	// Invalid values checked by setters
 	if err := trendAnomaly.SetDuration(params.Duration); err != nil {
 		return nil, err
 	}
-
 	if err := trendAnomaly.SetStartDelay(params.StartDelay); err != nil {
 		return nil, err
 	}
-
 	if err := trendAnomaly.SetMagFunctionByName(params.FuncName); err != nil {
 		return nil, err
 	}
 
-	// Fields that can never be invalid are set directly
+	// Fields that can never be invalid set directly
 	trendAnomaly.typeName = "trend"
 	trendAnomaly.Magnitude = params.Magnitude
 	trendAnomaly.Repeats = params.Repeats
@@ -76,35 +75,6 @@ func NewTrendAnomaly(params TrendParams) (*trendAnomaly, error) {
 	trendAnomaly.Off = params.Off
 
 	return trendAnomaly, nil
-}
-
-// Sets the duration of each trend anomaly in seconds if duration > 0.
-// If duration=0, the trend anomaly is deactivated.
-func (t *trendAnomaly) SetDuration(duration float64) error {
-	if duration < 0 {
-		return errors.New("duration must be positive value")
-	}
-	if duration == 0 {
-		t.Off = true
-	}
-	t.duration = duration
-	return nil
-}
-
-// Sets the function of the trend anomaly using the name of the function if the
-// name is valid.
-func (t *trendAnomaly) SetMagFunctionByName(name string) error {
-	return t.SetFunctionByName(name, mathfuncs.GetTrendFunctionFromName, &t.magFuncName, &t.magFunction)
-}
-
-// Returns the name of the trend function.
-func (t *trendAnomaly) GetTrendFuncName() string {
-	return t.magFuncName
-}
-
-// Returns the trend function used by the trend anomaly.
-func (t *trendAnomaly) GetTrendFunction() mathfuncs.TrendFunction {
-	return t.magFunction
 }
 
 // Returns the change in signal caused by the trend anomaly this timestep.
@@ -143,4 +113,34 @@ func (t *trendAnomaly) getTrendAnomalySign() float64 {
 		return -1.0
 	}
 	return 1.0
+}
+
+// Setters
+
+// Sets the duration of each trend anomaly in seconds if duration > 0.
+// If duration=0, the trend anomaly is deactivated.
+func (t *trendAnomaly) SetDuration(duration float64) error {
+	if duration < 0 {
+		return errors.New("duration must be positive value")
+	}
+	if duration == 0 {
+		t.Off = true
+	}
+	t.duration = duration
+	return nil
+}
+
+func (t *trendAnomaly) SetMagFunctionByName(name string) error {
+	return t.SetFunctionByName(name, mathfuncs.GetTrendFunctionFromName, &t.magFuncName, &t.magFunction)
+}
+
+// Getters
+
+func (t *trendAnomaly) GetMagFuncName() string {
+	return t.magFuncName
+}
+
+// Returns the trend function used by the trend anomaly.
+func (t *trendAnomaly) GetMagFunction() mathfuncs.TrendFunction {
+	return t.magFunction
 }

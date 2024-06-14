@@ -13,20 +13,20 @@ type spikeAnomaly struct {
 	AnomalyBase
 
 	// Setters and getters are provided for private fields below to allow for error checking
-	probability   float64 // magnitude of probability of spike in each time step, default 0
 	Magnitude     float64 // magnitude of spikes, default 0
-	VaryMagnitude bool    // whether to vary the magnitude of spikes with Gaussian variation, default false
+	magFuncName   string  // name of the function used to vary the magnitude of the spikes, empty defaults to no functional modulation
+	VaryMagnitude bool    // whether apply Gaussian variation to magnitude of spikes, default false
 	spikeSign     float64 // the probability of spikes being positive or negative. default 0 (equally likely +/-). negative numbers favour negative spikes, positive numbers favour positive spikes
 
-	magFuncName  string // name of the function used to vary the magnitude of the spikes, empty defaults to no functional modulation
-	probFuncName string // name of the function used to vary the probability of the spikes, empty defaults to no functional modulation
+	probability  float64 // magnitude of probability of spike in each time step, default 0
+	probFuncName string  // name of the function used to vary the probability of the spikes, empty defaults to no functional modulation
 
 	// internal state
 	magFunction  mathfuncs.TrendFunction // returns spike anomaly magnitude for a given elapsed time, magntiude and period; set internally from FuncName
 	probFunction mathfuncs.TrendFunction // returns spike anomaly probability for a given elapsed time, magntiude and period; set internally from FuncName
 }
 
-// Parameters used for spike anomaly
+// Parameters used for spike anomaly.  All can be accessed publicly and used to define spikeAnomaly.
 type SpikeParams struct {
 	Probability     float64 `yaml:"probability"`
 	Magnitude       float64 `yaml:"magnitude"`
@@ -40,6 +40,7 @@ type SpikeParams struct {
 	SpikeSign       float64 `yaml:"spike_sign"`
 }
 
+// Initialise the internal fields of SpikeAnomaly when it is unmarshalled from yaml.
 func (s *spikeAnomaly) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var params SpikeParams
 	err := unmarshal(&params)
@@ -47,39 +48,43 @@ func (s *spikeAnomaly) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		return err
 	}
 
+	// This performs checking for invalid values
 	spikeAnomaly, err := NewSpikeAnomaly(params)
 	if err != nil {
 		return err
 	}
 
-	// Copy fields
+	// Copy fields to s
 	*s = *spikeAnomaly
 
 	return nil
 }
 
+// Returns a spikeAnomaly pointer with the requested parameters, checking for invalid values.
 func NewSpikeAnomaly(params SpikeParams) (*spikeAnomaly, error) {
 	spikeAnomaly := &spikeAnomaly{}
 
+	// Invalid values checked by setters
 	if err := spikeAnomaly.SetStartDelay(params.StartDelay); err != nil {
 		return nil, err
 	}
-
 	if err := spikeAnomaly.SetProbability(params.Probability); err != nil {
 		return nil, err
 	}
-
 	if err := spikeAnomaly.SetMagFunctionByName(params.MagnitudeFunc); err != nil {
 		return nil, err
 	}
-
 	if err := spikeAnomaly.SetProbFunctionByName(params.ProbabilityFunc); err != nil {
 		return nil, err
 	}
+	if err := spikeAnomaly.SetSpikeSign(params.SpikeSign); err != nil {
+		return nil, err
+	}
+	if err := spikeAnomaly.SetDuration(params.Duration); err != nil {
+		return nil, err
+	}
 
-	spikeAnomaly.SetDuration(params.Duration)
-	spikeAnomaly.SetSpikeSign(params.SpikeSign)
-
+	// Fields that can never be invalid set directly
 	spikeAnomaly.typeName = "spike"
 	spikeAnomaly.Magnitude = params.Magnitude
 	spikeAnomaly.VaryMagnitude = params.VaryMagnitude
@@ -87,43 +92,6 @@ func NewSpikeAnomaly(params SpikeParams) (*spikeAnomaly, error) {
 	spikeAnomaly.Off = params.Off
 
 	return spikeAnomaly, nil
-}
-
-func (s *spikeAnomaly) SetMagFunctionByName(name string) error {
-	return s.SetFunctionByName(name, mathfuncs.GetTrendFunctionFromName, &s.magFuncName, &s.magFunction)
-}
-
-func (s *spikeAnomaly) SetProbFunctionByName(name string) error {
-	return s.SetFunctionByName(name, mathfuncs.GetTrendFunctionFromName, &s.probFuncName, &s.probFunction)
-}
-
-func (s *spikeAnomaly) SetDuration(duration float64) error {
-	if duration == 0 {
-		if s.magFunction != nil {
-			return errors.New("duration must be greater than 0 when using a functional dependence for magntiude")
-		}
-		duration = -1.0 // continuous burst
-	}
-	s.duration = duration
-	return nil
-}
-
-// Sets probability of spike anomalies occurring each timestep if probability >= 0.
-func (s *spikeAnomaly) SetProbability(probability float64) error {
-	if probability < 0 {
-		return errors.New("probability must be greater than or equal to 0")
-	}
-
-	s.probability = probability
-	return nil
-}
-
-func (s *spikeAnomaly) SetSpikeSign(spikeSign float64) error {
-	if spikeSign < -1.0 || spikeSign > 1.0 {
-		return errors.New("spike sign must be between -1 and 1")
-	}
-	s.spikeSign = spikeSign
-	return nil
 }
 
 // Returns the change in signal caused by the instantaneous anomaly this timestep.
@@ -187,11 +155,8 @@ func (ia *spikeAnomaly) stepAnomaly(r *rand.Rand, Ts float64) float64 {
 	return returnval
 }
 
-// Returns the sign of the spike anomaly based on the SpikeSign parameter.
-// If SpikeSign is positive, only positive spikes are allowed.
-// If SpikeSign is negative, only negative spikes are allowed.
-// If SpikeSign is 0, both positive and negative spikes are allowed with equal probability.
-// Values in between 0 and 1 will allow positive spikes with a probability equal to the value.
+// Returns -1.0 or +1.0 with a probability based on the SpikeSign parameter.
+// If SpikeSign is 0, -1.0 and +1.0 are returned with equal probability.
 func (ia *spikeAnomaly) GetSpikeSignFromSpikeSign(r *rand.Rand) float64 {
 	if r.Float64()*2-1 > ia.spikeSign {
 		return -1.0
@@ -200,12 +165,65 @@ func (ia *spikeAnomaly) GetSpikeSignFromSpikeSign(r *rand.Rand) float64 {
 	}
 }
 
+// Setters
+
+// Sets the duration of each spike anomaly in seconds. If duration=0, the spike anomaly
+// defined as is continuous (duration=-1.0).
+func (s *spikeAnomaly) SetDuration(duration float64) error {
+	if duration == 0 {
+		if s.magFunction != nil {
+			return errors.New("duration must be greater than 0 when using a functional dependence for magntiude")
+		}
+		duration = -1.0 // continuous burst
+	}
+	s.duration = duration
+	return nil
+}
+
+// Set probability of spike anomalies occurring each timestep if probability >= 0.
+func (s *spikeAnomaly) SetProbability(probability float64) error {
+	if probability < 0 {
+		return errors.New("probability must be greater than or equal to 0")
+	}
+
+	s.probability = probability
+	return nil
+}
+
+func (s *spikeAnomaly) SetSpikeSign(spikeSign float64) error {
+	if spikeSign < -1.0 || spikeSign > 1.0 {
+		return errors.New("spike sign must be between -1 and 1")
+	}
+	s.spikeSign = spikeSign
+	return nil
+}
+
+// Sets the field magFunction to the function with the given name.
+func (s *spikeAnomaly) SetMagFunctionByName(name string) error {
+	return s.SetFunctionByName(name, mathfuncs.GetTrendFunctionFromName, &s.magFuncName, &s.magFunction)
+}
+
+// Sets the field probFunction to the function with the given name.
+func (s *spikeAnomaly) SetProbFunctionByName(name string) error {
+	return s.SetFunctionByName(name, mathfuncs.GetTrendFunctionFromName, &s.probFuncName, &s.probFunction)
+}
+
+// Getters
+
 func (s *spikeAnomaly) GetProbability() float64 {
 	return s.probability
 }
 
 func (s *spikeAnomaly) GetSpikeSign() float64 {
 	return s.spikeSign
+}
+
+func (s *spikeAnomaly) GetMagFunctionName() mathfuncs.TrendFunction {
+	return s.magFunction
+}
+
+func (s *spikeAnomaly) GetProbFunctionName() string {
+	return s.probFuncName
 }
 
 func (s *spikeAnomaly) GetMagFunction() mathfuncs.TrendFunction {
