@@ -2,6 +2,7 @@ package anomaly
 
 import (
 	"errors"
+	"math"
 	"math/rand/v2"
 
 	"github.com/synaptecltd/emulator/mathfuncs"
@@ -11,15 +12,16 @@ import (
 type SpikeAnomaly struct {
 	probability   float64 // probability of spike in each time step, default 0
 	Magnitude     float64 // magnitude of spikes, default 0
-	VaryMagnitude bool    // whether to vary the magnitude of spikes, default false
-	SpikeSign     float64 // positive value only allows positive spikes, negative only allows negative, default 0 allows both
+	VaryMagnitude bool    // whether to vary the magnitude of spikes with Gaussian variation, default false
+	spikeSign     float64 // the probability of spikes being positive or negative. default 0 (equally likely +/-). negative numbers favour negative spikes, positive numbers favour positive spikes
 
 	duration   float64 // duration of each burst of spike anomalies in seconds, negative values mean continuous burst, default -1
 	startDelay float64 // start time for spike anomalies to start occuring in seconds, default 0
 	Repeats    uint64  // number of times bursts of spike anomalies repeat, default 0 for infinite
 	Off        bool    // true: spike anomaly deactivated, false: activated (default)
 
-	funcName string // name of the function used to vary the magnitude of the spikes, empty defaults to no functional modulation
+	magFuncName  string // name of the function used to vary the magnitude of the spikes, empty defaults to no functional modulation
+	probFuncName string // name of the function used to vary the probability of the spikes, empty defaults to no functional modulation
 
 	elapsedActivatedIndex int     // number of time steps since start of active burst of spike anomaly, used to track the progress of bursts
 	elapsedActivatedTime  float64 // as above but in seconds
@@ -27,22 +29,24 @@ type SpikeAnomaly struct {
 	startDelayIndex       int     // startDelay converted to time steps, used to track delay period between instantaneous anomaly bursts
 	countRepeats          uint64
 
-	spikeFunction mathfuncs.TrendFunction // returns spike anomaly magnitude for a given elapsed time, magntiude and period; set internally from FuncName
+	magFunction  mathfuncs.TrendFunction // returns spike anomaly magnitude for a given elapsed time, magntiude and period; set internally from FuncName
+	probFunction mathfuncs.TrendFunction // returns spike anomaly probability for a given elapsed time, magntiude and period; set internally from FuncName
 
 	// TODO vary anomaly probability using trends
 }
 
 // Parameters used for spike anomaly
 type SpikeParams struct {
-	Probability   float64 `yaml:"probability"`
-	Magnitude     float64 `yaml:"magnitude"`
-	VaryMagnitude bool    `yaml:"vary_magnitude"`
-	Duration      float64 `yaml:"duration"`
-	StartDelay    float64 `yaml:"start_delay"`
-	Repeats       uint64  `yaml:"repeat"`
-	Off           bool    `yaml:"off"`
-	FuncName      string  `yaml:"func_name"`
-	SpikeSign     float64 `yaml:"spike_sign"`
+	Probability     float64 `yaml:"probability"`
+	Magnitude       float64 `yaml:"magnitude"`
+	VaryMagnitude   bool    `yaml:"vary_magnitude"`
+	Duration        float64 `yaml:"duration"`
+	StartDelay      float64 `yaml:"start_delay"`
+	Repeats         uint64  `yaml:"repeat"`
+	Off             bool    `yaml:"off"`
+	MagnitudeFunc   string  `yaml:"mag_func"`
+	ProbabilityFunc string  `yaml:"prob_func"`
+	SpikeSign       float64 `yaml:"spike_sign"`
 }
 
 func (ia *SpikeAnomaly) UnmarshalYAML(unmarshal func(interface{}) error) error {
@@ -68,40 +72,53 @@ func NewSpikeAnomaly(params SpikeParams) (*SpikeAnomaly, error) {
 		return nil, err
 	}
 
-	if err := spikeAnomaly.SetFunctionByName(params.FuncName); err != nil {
+	if err := spikeAnomaly.SetMagFunctionByName(params.MagnitudeFunc); err != nil {
+		return nil, err
+	}
+
+	if err := spikeAnomaly.SetProbFunctionByName(params.ProbabilityFunc); err != nil {
 		return nil, err
 	}
 
 	spikeAnomaly.SetDuration(params.Duration)
 
+	spikeAnomaly.SetSpikeSign(params.SpikeSign)
+
 	spikeAnomaly.Magnitude = params.Magnitude
 	spikeAnomaly.VaryMagnitude = params.VaryMagnitude
 	spikeAnomaly.Repeats = params.Repeats
 	spikeAnomaly.Off = params.Off
-	spikeAnomaly.SpikeSign = params.SpikeSign
 
 	return spikeAnomaly, nil
 }
 
-func (s *SpikeAnomaly) SetFunctionByName(name string) error {
+func (s *SpikeAnomaly) setFunctionByName(name string, funcSetter func(string) (mathfuncs.TrendFunction, error), funcName *string, funcVar *mathfuncs.TrendFunction) error {
 	if name == "" {
-		s.funcName = name
-		s.spikeFunction = nil
+		*funcName = name
+		*funcVar = nil
 		return nil
 	}
 
-	trendFunc, err := mathfuncs.GetTrendFunctionFromName(name)
+	trendFunc, err := funcSetter(name)
 	if err != nil {
 		return err
 	}
-	s.spikeFunction = trendFunc
-	s.funcName = name
+	*funcVar = trendFunc
+	*funcName = name
 	return nil
+}
+
+func (s *SpikeAnomaly) SetMagFunctionByName(name string) error {
+	return s.setFunctionByName(name, mathfuncs.GetTrendFunctionFromName, &s.magFuncName, &s.magFunction)
+}
+
+func (s *SpikeAnomaly) SetProbFunctionByName(name string) error {
+	return s.setFunctionByName(name, mathfuncs.GetTrendFunctionFromName, &s.probFuncName, &s.probFunction)
 }
 
 func (s *SpikeAnomaly) SetDuration(duration float64) error {
 	if duration == 0 {
-		if s.spikeFunction != nil {
+		if s.magFunction != nil {
 			return errors.New("duration must be greater than 0 when using a functional dependence for magntiude")
 		}
 		duration = -1.0 // continuous burst
@@ -130,6 +147,14 @@ func (s *SpikeAnomaly) SetProbability(probability float64) error {
 	return nil
 }
 
+func (s *SpikeAnomaly) SetSpikeSign(spikeSign float64) error {
+	if spikeSign < -1.0 || spikeSign > 1.0 {
+		return errors.New("spike sign must be between -1 and 1")
+	}
+	s.spikeSign = spikeSign
+	return nil
+}
+
 // Returns the change in signal caused by the instantaneous anomaly this timestep.
 func (ia *SpikeAnomaly) stepAnomaly(r *rand.Rand, Ts float64) float64 {
 	if ia.Off {
@@ -143,31 +168,40 @@ func (ia *SpikeAnomaly) stepAnomaly(r *rand.Rand, Ts float64) float64 {
 		return 0.0
 	}
 
+	ia.elapsedActivatedTime = float64(ia.elapsedActivatedIndex) * Ts
+
 	// No anomaly if probability is not met
-	if r.Float64() > ia.probability {
+	probThisStep := ia.probability
+	if ia.probFunction != nil {
+		probThisStep = ia.probFunction(ia.elapsedActivatedTime, ia.probability, ia.duration)
+		// take positive values only
+		probThisStep = math.Abs(probThisStep)
+	}
+
+	if r.Float64() > probThisStep {
 		ia.isAnomalyActive = false
 		ia.elapsedActivatedIndex += 1 // still increment to keep the bursts spaced out
 		return 0.0
 	}
 
 	ia.isAnomalyActive = true
-	// TODO something squiffy here
-	returnval := ia.Magnitude * ia.GetSpikeSignFromSpikeSign()
+	returnval := ia.Magnitude * ia.GetSpikeSignFromSpikeSign(r)
 	if ia.VaryMagnitude {
 		returnval = returnval * r.NormFloat64()
 	}
 
 	// if duration is negative the spike anomaly is continuous and there is no need to worry about
-	// repeats or elapsedActivatedIndex or functions
+	// repeats or elapsedActivatedIndex or functions for magnitude
 	if ia.duration < 0 {
 		return returnval
 	}
 
-	ia.elapsedActivatedTime = float64(ia.elapsedActivatedIndex) * Ts
-
 	// If a function is set, use it to vary the magnitude of the spikes
-	if ia.spikeFunction != nil {
-		returnval = ia.spikeFunction(ia.elapsedActivatedTime, ia.Magnitude, ia.duration)
+	if ia.magFunction != nil {
+		returnval = ia.magFunction(ia.elapsedActivatedTime, ia.Magnitude, ia.duration) * ia.GetSpikeSignFromSpikeSign(r)
+	}
+	if ia.VaryMagnitude {
+		returnval = returnval * r.NormFloat64()
 	}
 
 	ia.elapsedActivatedIndex += 1
@@ -182,15 +216,15 @@ func (ia *SpikeAnomaly) stepAnomaly(r *rand.Rand, Ts float64) float64 {
 	return returnval
 }
 
-func (ia *SpikeAnomaly) GetSpikeSignFromSpikeSign() float64 {
-	if ia.SpikeSign < 0 {
+// Returns the sign of the spike anomaly based on the SpikeSign parameter.
+// If SpikeSign is positive, only positive spikes are allowed.
+// If SpikeSign is negative, only negative spikes are allowed.
+// If SpikeSign is 0, both positive and negative spikes are allowed with equal probability.
+// Values in between 0 and 1 will allow positive spikes with a probability equal to the value.
+func (ia *SpikeAnomaly) GetSpikeSignFromSpikeSign(r *rand.Rand) float64 {
+	if r.Float64()*2-1 > ia.spikeSign {
 		return -1.0
-	} else if ia.SpikeSign > 0 {
-		return 1.0
 	} else {
-		if rand.Float64() < 0.5 {
-			return -1.0
-		}
 		return 1.0
 	}
 }
