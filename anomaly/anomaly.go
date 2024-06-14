@@ -14,32 +14,41 @@ type Container map[string]AnomalyInterface
 // AnomalyInterface is the interface for all anomaly types (trends, instantaneous, etc).
 type AnomalyInterface interface {
 	UnmarshalYAML(unmarshal func(interface{}) error) error // Unmarshals an anomaly entry into the correct type based on the type field
-	TypeAsString() string                                  // Returns the anomaly type as a string
-	GetIsAnomalyActive() bool                              // Returns whether the anomaly is active this timestep
-	GetDuration() float64                                  // Returns the duration of each anomaly in seconds
-	GetStartDelay() float64                                // Returns the start time of anomalies in seconds
-	stepAnomaly(r *rand.Rand, Ts float64) float64          // Steps the internal time state of an anomaly and returns the change in signal caused by the anomaly
+
+	// Inherited from AnomalyBase
+	GetTypeAsString() string          // Returns the type of anomaly as a string
+	GetStartDelay() float64           // Returns the start time of anomalies in seconds
+	GetDuration() float64             // Returns the duration of each anomaly in seconds
+	GetIsAnomalyActive() bool         // Returns whether the anomaly is active this timestep
+	GetStartDelayIndex() int          // Returns the start delay of the anomaly in time steps
+	GetElapsedActivatedIndex() int    // Returns the number of time steps since the start of the active anomaly trend/burst
+	GetElapsedActivatedTime() float64 // Returns the time elapsed since the start of the active anomaly trend/burst
+	GetCountRepeats() uint64          // Returns the number of times the anomaly trend/burst has repeated so far
+	SetStartDelay(float64) error      // Sets the start time of anomalies in seconds if delay >= 0
+	SetFunctionByName(string) error   // Sets the function used to vary the parameters of an anomaly using a name string (see mathfuncs for available functions)
+
+	stepAnomaly(r *rand.Rand, Ts float64) float64 // Steps the internal time state of an anomaly and returns the change in signal caused by the anomaly
 }
 
-// UnmarshalYAML unmarshals an anomaly entry into the correct type base on the type field.
+// Unmarshals a generic anomaly entry into the correct type base on the anomaly "type" field.
 func (c *Container) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var raw map[string]map[string]interface{}
 	if err := unmarshal(&raw); err != nil {
 		return err
 	}
-
+	// Match on the definition of the anomaly type
 	for key, value := range raw {
 		var anomaly AnomalyInterface
 		switch value["type"].(string) {
 		case "spike":
-			anomaly = &SpikeAnomaly{}
+			anomaly = &spikeAnomaly{}
 		case "trend":
 			anomaly = &trendAnomaly{}
 		default:
 			return fmt.Errorf("unknown anomaly type: %s", value["type"].(string))
 		}
 
-		// Convert the value map back into YAML
+		// Convert the value map into YAML for unmarshalling into an anomaly
 		valueYAML, err := yaml.Marshal(value)
 		if err != nil {
 			return err

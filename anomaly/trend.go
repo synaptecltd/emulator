@@ -11,22 +11,14 @@ import (
 // The type is private so that it can only be created using NewTrendAnomaly or by
 // unmarshalling from yaml.
 type trendAnomaly struct {
-	// Setters and getters are provided for private fields below to allow for error checking
-	startDelay  float64 // start time of trend anomalies in seconds
-	duration    float64 // duration of each trend anomaly in seconds, >= 0
-	Magnitude   float64 // magnitude of trend anomaly
-	Repeats     uint64  // number of times the trend anomaly repeats, default 0 for infinite
-	funcName    string  // name of function to use for the trend, defaults to "linear" if empty
-	InvertTrend bool    // true inverts the trend function (multiplies by -1.0), default false (no inverting)
-	Off         bool    // true: trend anomaly deactivated, false: activated (default)
+	AnomalyBase
 
-	// Internal state
-	isAnomalyActive   bool                    // whether the trend anomaly is modulating the waveform in this time step
-	startDelayIndex   int                     // startDelay converted to time steps, used to track delay period between trend repeats
-	elapsedTrendTime  float64                 // time elapsed since the start of the active trend anomaly
-	elapsedTrendIndex int                     // number of time steps since start of active trend anomaly, used to track the progress of trend anomaly
-	countRepeats      uint64                  // counter for number of times trend anomaly has repeated
-	trendFunction     mathfuncs.TrendFunction // returns trend anomaly magnitude for a given elapsed time, magntiude and period; set internally from TrendFuncName
+	Magnitude   float64 // magnitude of trend anomaly
+	magFuncName string  // name of function to use to vary the trend magnitude, defaults to "linear" if empty
+	InvertTrend bool    // true inverts the trend function (multiplies by -1.0), default false (no inverting)
+
+	// internal state
+	magFunction mathfuncs.TrendFunction // returns trend anomaly magnitude for a given elapsed time, magntiude and period; set internally from TrendFuncName
 }
 
 // Parameters to use for the trend anomaly. All can be accessed publicly and used to define trendAnomaly.
@@ -72,11 +64,12 @@ func NewTrendAnomaly(params TrendParams) (*trendAnomaly, error) {
 		return nil, err
 	}
 
-	if err := trendAnomaly.SetFunctionByName(params.FuncName); err != nil {
+	if err := trendAnomaly.SetMagFunctionByName(params.FuncName); err != nil {
 		return nil, err
 	}
 
 	// Fields that can never be invalid are set directly
+	trendAnomaly.typeName = "trend"
 	trendAnomaly.Magnitude = params.Magnitude
 	trendAnomaly.Repeats = params.Repeats
 	trendAnomaly.InvertTrend = params.InvertTrend
@@ -98,71 +91,20 @@ func (t *trendAnomaly) SetDuration(duration float64) error {
 	return nil
 }
 
-// Sets the start time of trend anomalies in seconds if delay >= 0.
-func (t *trendAnomaly) SetStartDelay(startDelay float64) error {
-	if startDelay < 0 {
-		return errors.New("startDelay must be greater than or equal to 0")
-	}
-
-	t.startDelay = startDelay
-	return nil
-}
-
 // Sets the function of the trend anomaly using the name of the function if the
 // name is valid.
-func (t *trendAnomaly) SetFunctionByName(name string) error {
-	trendFunc, err := mathfuncs.GetTrendFunctionFromName(name)
-	if err != nil {
-		return err
-	}
-	t.trendFunction = trendFunc
-	t.funcName = name
-	return nil
-}
-
-// Returns the start delay of the trend anomaly in seconds.
-func (t *trendAnomaly) GetStartDelay() float64 {
-	return t.startDelay
-}
-
-// Returns the duration of each trend anomaly in seconds.
-func (t *trendAnomaly) GetDuration() float64 {
-	return t.duration
+func (t *trendAnomaly) SetMagFunctionByName(name string) error {
+	return t.SetFunctionByName(name, mathfuncs.GetTrendFunctionFromName, &t.magFuncName, &t.magFunction)
 }
 
 // Returns the name of the trend function.
 func (t *trendAnomaly) GetTrendFuncName() string {
-	return t.funcName
-}
-
-// Returns whether the trend anomaly is active this timestep.
-func (t *trendAnomaly) GetIsAnomalyActive() bool {
-	return t.isAnomalyActive
-}
-
-// Returns t.startDelay as a number of time steps.
-func (t *trendAnomaly) GetStartDelayIndex() int {
-	return t.startDelayIndex
-}
-
-// Returns the time elapsed since the start of the active trend anomaly.
-func (t *trendAnomaly) GetElapsedTrendTime() float64 {
-	return t.elapsedTrendTime
-}
-
-// Returns the number of time steps since the start of the active trend anomaly.
-func (t *trendAnomaly) GetElapsedTrendIndex() int {
-	return t.elapsedTrendIndex
-}
-
-// Returns the number of times the trend anomaly has repeated so far.
-func (t *trendAnomaly) GetCountRepeats() uint64 {
-	return t.countRepeats
+	return t.magFuncName
 }
 
 // Returns the trend function used by the trend anomaly.
 func (t *trendAnomaly) GetTrendFunction() mathfuncs.TrendFunction {
-	return t.trendFunction
+	return t.magFunction
 }
 
 // Returns the change in signal caused by the trend anomaly this timestep.
@@ -173,40 +115,26 @@ func (t *trendAnomaly) stepAnomaly(_ *rand.Rand, Ts float64) float64 {
 		return 0.0
 	}
 	// Check if the trend anomaly is active this timestep
-	t.isAnomalyActive = t.isTrendsAnomalyActive(Ts)
-	if !t.isTrendsAnomalyActive(Ts) {
+	t.isAnomalyActive = t.CheckAnomalyActive(Ts)
+	if !t.isAnomalyActive {
 		t.startDelayIndex += 1 // only increment if inactive to keep track of the delay between trend cycles
 		return 0.0
 	}
 
-	t.elapsedTrendTime = float64(t.elapsedTrendIndex) * Ts
+	t.elapsedActivatedTime = float64(t.elapsedActivatedIndex) * Ts
 
-	trendAnomalyMagnitude := t.trendFunction(t.elapsedTrendTime, t.Magnitude, t.duration)
+	trendAnomalyMagnitude := t.magFunction(t.elapsedActivatedTime, t.Magnitude, t.duration)
 	trendAnomalyDelta := t.getTrendAnomalySign() * trendAnomalyMagnitude
-	t.elapsedTrendIndex += 1
+	t.elapsedActivatedIndex += 1
 
 	// If the trend anomaly is complete, reset the index and increment the repeat counter
-	if t.elapsedTrendIndex == int(t.duration/Ts) {
-		t.elapsedTrendIndex = 0
+	if t.elapsedActivatedIndex == int(t.duration/Ts) {
+		t.elapsedActivatedIndex = 0
 		t.startDelayIndex = 0
 		t.countRepeats += 1
 	}
 
 	return trendAnomalyDelta
-}
-
-// Returns whether trend anomalies should be active this timestep. This is true if:
-//  1. Enough time has elapsed for the trend anomaly to start, and;
-//  2. The trend anomaly has not yet completed all repetitions.
-func (t *trendAnomaly) isTrendsAnomalyActive(Ts float64) bool {
-	moreRepeatsAllowed := t.countRepeats < t.Repeats || t.Repeats == 0 // 0 means infinite repetitions
-	if !moreRepeatsAllowed {
-		t.Off = true // switch the trend off if all repetitions are complete to save future computation
-		return false
-	}
-
-	hasTrendStarted := t.startDelayIndex >= int(t.startDelay/Ts)-1
-	return hasTrendStarted
 }
 
 // Returns -1.0 if InvertTrend is true, or +1.0 if false.
@@ -215,8 +143,4 @@ func (t *trendAnomaly) getTrendAnomalySign() float64 {
 		return -1.0
 	}
 	return 1.0
-}
-
-func (t *trendAnomaly) TypeAsString() string {
-	return "trend"
 }
