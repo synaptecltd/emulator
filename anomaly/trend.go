@@ -18,7 +18,7 @@ type trendAnomaly struct {
 	InvertTrend bool    // true inverts the trend function (multiplies by -1.0), default false (no inverting)
 
 	// internal state
-	magFunction mathfuncs.TrendFunction // returns trend anomaly magnitude for a given elapsed time, magntiude and period; set internally from TrendFuncName
+	magFunction mathfuncs.MathsFunction // returns trend anomaly magnitude for a given elapsed time, magntiude and period; set internally from TrendFuncName
 }
 
 // Parameters to use for the trend anomaly. All can be accessed publicly and used to define trendAnomaly.
@@ -145,6 +145,6 @@ func (t *trendAnomaly) GetMagFuncName() string {
 }
 
 // Returns the trend function used by the trend anomaly.
-func (t *trendAnomaly) GetMagFunction() mathfuncs.TrendFunction {
+func (t *trendAnomaly) GetMagFunction() mathfuncs.MathsFunction {
 	return t.magFunction
 }

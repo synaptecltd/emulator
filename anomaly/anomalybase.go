@@ -89,7 +89,7 @@ func (a *AnomalyBase) CheckAnomalyActive(Ts float64) bool {
 }
 
 // Set the fields funcName and funcVar of an anomaly by looking up a function name.
-func (a *AnomalyBase) SetFunctionByName(name string, funcSetter func(string) (mathfuncs.TrendFunction, error), funcName *string, funcVar *mathfuncs.TrendFunction) error {
+func (a *AnomalyBase) SetFunctionByName(name string, funcSetter func(string) (mathfuncs.MathsFunction, error), funcName *string, funcVar *mathfuncs.MathsFunction) error {
 	if name == "" {
 		*funcName = name
 		*funcVar = nil

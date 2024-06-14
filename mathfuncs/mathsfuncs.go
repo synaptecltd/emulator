@@ -8,10 +8,10 @@ import (
 
 // A mathematical function y=f(t,A,T). Takes amplitude, A, and period, T,
 // as inputs and returns the value of the function at time, t.
-type TrendFunction func(t, A, T float64) float64
+type MathsFunction func(t, A, T float64) float64
 
 // A map between string name and trendFunction pairs
-var trendFunctions = map[string]TrendFunction{
+var mathsFunctions = map[string]MathsFunction{
 	"linear":            linearRamp, // default
 	"sine":              sineWave,
 	"cosine":            cosineWave,
@@ -29,12 +29,12 @@ var trendFunctions = map[string]TrendFunction{
 }
 
 // Returns the named trend function. Defaults to linear if name is empty.
-func GetTrendFunctionFromName(name string) (TrendFunction, error) {
+func GetTrendFunctionFromName(name string) (MathsFunction, error) {
 	// Default to linear if no name is provided
 	if name == "" {
-		return trendFunctions["linear"], nil
+		return mathsFunctions["linear"], nil
 	}
-	trendFunc, ok := trendFunctions[name]
+	trendFunc, ok := mathsFunctions[name]
 	if !ok {
 		return nil, errors.New("trend function not found")
 	}

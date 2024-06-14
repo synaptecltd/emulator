@@ -23,8 +23,8 @@ type spikeAnomaly struct {
 	probFuncName string  // name of the function used to vary the probability of the spikes, empty defaults to constant =probability
 
 	// internal state
-	magFunction  mathfuncs.TrendFunction // returns spike anomaly magnitude for a given elapsed time, magntiude and period; set internally from magFuncName
-	probFunction mathfuncs.TrendFunction // returns spike anomaly probability for a given elapsed time, magntiude and period; set internally from probFuncName
+	magFunction  mathfuncs.MathsFunction // returns spike anomaly magnitude for a given elapsed time, magntiude and period; set internally from magFuncName
+	probFunction mathfuncs.MathsFunction // returns spike anomaly probability for a given elapsed time, magntiude and period; set internally from probFuncName
 }
 
 // Parameters used to request a spike anomaly. These map onto the fields of spikeAnomaly.
@@ -224,7 +224,7 @@ func (s *spikeAnomaly) GetSpikeSign() float64 {
 	return s.spikeSign
 }
 
-func (s *spikeAnomaly) GetMagFunctionName() mathfuncs.TrendFunction {
+func (s *spikeAnomaly) GetMagFunctionName() mathfuncs.MathsFunction {
 	return s.magFunction
 }
 
@@ -232,10 +232,10 @@ func (s *spikeAnomaly) GetProbFunctionName() string {
 	return s.probFuncName
 }
 
-func (s *spikeAnomaly) GetMagFunction() mathfuncs.TrendFunction {
+func (s *spikeAnomaly) GetMagFunction() mathfuncs.MathsFunction {
 	return s.magFunction
 }
 
-func (s *spikeAnomaly) GetProbFunction() mathfuncs.TrendFunction {
+func (s *spikeAnomaly) GetProbFunction() mathfuncs.MathsFunction {
 	return s.probFunction
 }
