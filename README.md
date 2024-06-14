@@ -105,11 +105,13 @@ Anomaly:
 
 ## Anomalies
 
-Two types of "anomaly" can be added to the data to create interesting scenarios:
-1. Instantaneous: based on a probability factor, activate an instantaneous change to the selected parameter
-2. Periodic "trends": apply a continuous changes to the parameter, including ramps, sinusoids, and additional noise. See `./mathfuncs` for a full list.
+Two types of anomaly can be added to the data to create interesting scenarios:
+1. Spike: actuate an instantaneous change of given magnitude to the selected parameter with a probability factor
+2. Trend: apply continuous changes to the parameter
 
-The parameter `TrendAnomalyMagnitude` has the following effects:
+The magnitudes and probability factors of Trend and Spike anomalies can be modulated using various functions such as ramps, sinusoids, etc. See `./mathfuncs` for a full list.
+
+Anomalies can be added to the following sensor parameters:
 
 | Sensor type     | Name of item       | Modulated parameter         | Effect                                         | Units         |
 | --------------- | ------------------ | --------------------------- | ---------------------------------------------- | ------------- |
