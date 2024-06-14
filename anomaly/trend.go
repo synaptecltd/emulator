@@ -91,7 +91,7 @@ func (t *trendAnomaly) stepAnomaly(_ *rand.Rand, Ts float64) float64 {
 	// Check if the trend anomaly is active this timestep
 	t.isAnomalyActive = t.CheckAnomalyActive(Ts)
 	if !t.isAnomalyActive {
-		t.startDelayIndex += 1 // only increment if inactive to keep track of the delay between trend cycles
+		t.startDelayIndex += 1 // increment to keep track of the delay between trend repeats
 		return 0.0
 	}
 
@@ -135,6 +135,9 @@ func (t *trendAnomaly) SetDuration(duration float64) error {
 }
 
 func (t *trendAnomaly) SetMagFunctionByName(name string) error {
+	if name == "" {
+		name = "linear" // default to linear if no name is provided
+	}
 	return t.SetFunctionByName(name, mathfuncs.GetTrendFunctionFromName, &t.magFuncName, &t.magFunction)
 }
 

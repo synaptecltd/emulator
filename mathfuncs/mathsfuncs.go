@@ -12,7 +12,7 @@ type MathsFunction func(t, A, T float64) float64
 
 // A map between string name and trendFunction pairs
 var mathsFunctions = map[string]MathsFunction{
-	"linear":            linearRamp, // default
+	"linear":            linearRamp,
 	"sine":              sineWave,
 	"cosine":            cosineWave,
 	"exponential":       exponentialRamp,
@@ -30,10 +30,6 @@ var mathsFunctions = map[string]MathsFunction{
 
 // Returns the named trend function. Defaults to linear if name is empty.
 func GetTrendFunctionFromName(name string) (MathsFunction, error) {
-	// Default to linear if no name is provided
-	if name == "" {
-		return mathsFunctions["linear"], nil
-	}
 	trendFunc, ok := mathsFunctions[name]
 	if !ok {
 		return nil, errors.New("trend function not found")

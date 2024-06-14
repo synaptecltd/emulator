@@ -37,17 +37,20 @@ inst1:
 			Duration:   duration,
 		})
 
-	instAnomaly := &anomaly.SpikeAnomaly{Probability: probability}
+	instAnomaly, _ := anomaly.NewSpikeAnomaly(
+		anomaly.SpikeParams{
+			Probability: probability,
+		})
 
 	for _, anom := range container {
 		var expected anomaly.AnomalyInterface
-		switch anom.TypeAsString() {
+		switch anom.GetTypeAsString() {
 		case "trend":
 			expected = trendAnomaly
-		case "instantaneous":
+		case "spike":
 			expected = instAnomaly
 		}
-		assert.Equal(t, expected.TypeAsString(), anom.TypeAsString())
+		assert.Equal(t, expected.GetTypeAsString(), anom.GetTypeAsString())
 		assert.InDelta(t, expected.GetDuration(), anom.GetDuration(), 1e-6) // floating point precision
 		assert.InDelta(t, expected.GetStartDelay(), anom.GetStartDelay(), 1e-6)
 
@@ -55,11 +58,11 @@ inst1:
 }
 
 func TestGetTypeAsString(t *testing.T) {
-	instAnomaly := anomaly.SpikeAnomaly{}
-	expected := "instantaneous"
-	assert.Equal(t, expected, instAnomaly.TypeAsString())
+	instAnomaly, _ := anomaly.NewSpikeAnomaly(anomaly.SpikeParams{})
+	expected := "spike"
+	assert.Equal(t, expected, instAnomaly.GetTypeAsString())
 
 	trendAnomaly, _ := anomaly.NewTrendAnomaly(anomaly.TrendParams{})
 	expected = "trend"
-	assert.Equal(t, expected, trendAnomaly.TypeAsString())
+	assert.Equal(t, expected, trendAnomaly.GetTypeAsString())
 }

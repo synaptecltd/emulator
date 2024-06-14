@@ -51,18 +51,23 @@ func mean(values []float64) float64 {
 	return sum / float64(len(values))
 }
 
-// Assert that an instantaneous anomaly that never triggers is never active
+// Assert that a spike anomaly that never triggers is never active
 func TestTemperatureEmulationAnomalies_NoAnomalies(t *testing.T) {
 	emulator := NewEmulator(14400, 0.0)
+
+	spikeAnomaly, err := anomaly.NewSpikeAnomaly(
+		anomaly.SpikeParams{
+			Probability: 0.0, // never triggers
+			Magnitude:   30,
+		},
+	)
+	assert.NoError(t, err)
 
 	emulator.T = &TemperatureEmulation{
 		MeanTemperature: 30.0,
 		NoiseMag:        0.01,
 		Anomaly: anomaly.Container{
-			anomalyKey: &anomaly.SpikeAnomaly{
-				Magnitude:   30,
-				Probability: 0.0, // never triggers
-			},
+			anomalyKey: spikeAnomaly,
 		},
 	}
 
@@ -81,14 +86,20 @@ func TestTemperatureEmulationAnomalies_NoAnomalies(t *testing.T) {
 func TestTemperatureEmulationAnomalies_Anomalies(t *testing.T) {
 	emulator := NewEmulator(14400, 0.0)
 
+	spikeAnomaly, err := anomaly.NewSpikeAnomaly(
+		anomaly.SpikeParams{
+			Probability: 0.5, // 50% probability
+			Magnitude:   30,
+			SpikeSign:   +1.0, // always positive spikes
+		},
+	)
+	assert.NoError(t, err)
+
 	emulator.T = &TemperatureEmulation{
 		MeanTemperature: 30.0,
 		NoiseMag:        0.01,
 		Anomaly: anomaly.Container{
-			anomalyKey: &anomaly.SpikeAnomaly{
-				Magnitude:   30,
-				Probability: 0.5,
-			},
+			anomalyKey: spikeAnomaly,
 		},
 	}
 

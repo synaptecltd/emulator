@@ -109,44 +109,30 @@ func (s *spikeAnomaly) stepAnomaly(r *rand.Rand, Ts float64) float64 {
 	// Check if the spike anomaly is active this timestep
 	s.isAnomalyActive = s.CheckAnomalyActive(Ts)
 	if !s.isAnomalyActive {
-		s.startDelayIndex += 1
+		s.startDelayIndex += 1 // increment to keep track of the delay between spike repeats
 		return 0.0
 	}
 
+	// Update the elapsed time now to correctly calculate the probability of the spike
 	s.elapsedActivatedTime = float64(s.elapsedActivatedIndex) * Ts
 
-	// No anomaly if probability is not met
-	probThisStep := s.probability
-	if s.probFunction != nil {
-		probThisStep = s.probFunction(s.elapsedActivatedTime, s.probability, s.duration)
-		// take positive values only
-		probThisStep = math.Abs(probThisStep)
-	}
-
-	if r.Float64() > probThisStep {
+	if r.Float64() > s.FetchProbability() {
 		s.isAnomalyActive = false
-		s.elapsedActivatedIndex += 1 // still increment to keep the bursts spaced out
+		s.elapsedActivatedIndex += 1 // still increment to keep spike bursts spaced correctly
 		return 0.0
 	}
 
 	s.isAnomalyActive = true
-	returnval := s.Magnitude * s.getSign(r)
-	if s.VaryMagnitude {
-		returnval = returnval * r.NormFloat64()
-	}
 
-	// if duration is negative the spike anomaly is continuous and there is no need to worry about
-	// repeats or elapsedActivatedIndex or functions for magnitude
-	if s.duration < 0 {
-		return returnval
-	}
-
-	// If a function is set, use it to vary the magnitude of the spikes
+	// Default value for delta can be...
+	spikeAnomalyDelta := s.Magnitude
 	if s.magFunction != nil {
-		returnval = s.magFunction(s.elapsedActivatedTime, s.Magnitude, s.duration) * s.getSign(r)
+		// ...overwritten by functions
+		spikeAnomalyDelta = s.magFunction(s.elapsedActivatedTime, s.Magnitude, s.duration)
 	}
+	spikeAnomalyDelta *= s.getSign(r) // ... flipped by sign
 	if s.VaryMagnitude {
-		returnval = returnval * r.NormFloat64()
+		spikeAnomalyDelta *= r.NormFloat64() // ... or modulated with a Gaussian
 	}
 
 	s.elapsedActivatedIndex += 1
@@ -158,7 +144,22 @@ func (s *spikeAnomaly) stepAnomaly(r *rand.Rand, Ts float64) float64 {
 		s.countRepeats += 1
 	}
 
-	return returnval
+	return spikeAnomalyDelta
+}
+
+// Fetches the probability of a spike anomaly occurring this timestep. This probability
+// is based on the probability magnitude, and the output of probability function if one is set.
+// For the function to work correctly with a probability function, the elapsedActivatedTime
+// field must be up to date.
+func (s *spikeAnomaly) FetchProbability() float64 {
+	if s.probFunction == nil {
+		return s.probability
+	}
+
+	prob := s.probFunction(s.elapsedActivatedTime, s.probability, s.duration)
+	prob = math.Abs(prob) // take positive values only
+
+	return prob
 }
 
 // Returns -1.0 or +1.0 with a probability based on the spikeSign parameter.
