@@ -23,20 +23,24 @@ type trendAnomaly struct {
 
 // Parameters to use for the trend anomaly. All can be accessed publicly and used to define trendAnomaly.
 type TrendParams struct {
-	StartDelay  float64 `yaml:"start_delay"`
-	Duration    float64 `yaml:"duration"`
+	// Defined in AnomalyBase
+
+	Repeats    uint64  `yaml:"repeat"`
+	Off        bool    `yaml:"off"`
+	StartDelay float64 `yaml:"start_delay"`
+	Duration   float64 `yaml:"duration"`
+
+	// Defined in trendAnomaly
+
 	Magnitude   float64 `yaml:"magnitude"`
-	Repeats     uint64  `yaml:"repeat"`
-	FuncName    string  `yaml:"trend_function"`
+	MagFuncName string  `yaml:"mag_function"`
 	InvertTrend bool    `yaml:"invert"`
-	Off         bool    `yaml:"off"`
 }
 
 // Initialise the internal fields of TrendAnomaly when it is unmarshalled from yaml.
 func (t *trendAnomaly) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var params TrendParams
-	err := unmarshal(&params)
-	if err != nil {
+	if err := unmarshal(&params); err != nil {
 		return err
 	}
 
@@ -63,7 +67,7 @@ func NewTrendAnomaly(params TrendParams) (*trendAnomaly, error) {
 	if err := trendAnomaly.SetStartDelay(params.StartDelay); err != nil {
 		return nil, err
 	}
-	if err := trendAnomaly.SetMagFunctionByName(params.FuncName); err != nil {
+	if err := trendAnomaly.SetMagFunctionByName(params.MagFuncName); err != nil {
 		return nil, err
 	}
 
@@ -94,7 +98,7 @@ func (t *trendAnomaly) stepAnomaly(_ *rand.Rand, Ts float64) float64 {
 	t.elapsedActivatedTime = float64(t.elapsedActivatedIndex) * Ts
 
 	trendAnomalyMagnitude := t.magFunction(t.elapsedActivatedTime, t.Magnitude, t.duration)
-	trendAnomalyDelta := t.getTrendAnomalySign() * trendAnomalyMagnitude
+	trendAnomalyDelta := t.getSign() * trendAnomalyMagnitude
 	t.elapsedActivatedIndex += 1
 
 	// If the trend anomaly is complete, reset the index and increment the repeat counter
@@ -108,7 +112,7 @@ func (t *trendAnomaly) stepAnomaly(_ *rand.Rand, Ts float64) float64 {
 }
 
 // Returns -1.0 if InvertTrend is true, or +1.0 if false.
-func (t *trendAnomaly) getTrendAnomalySign() float64 {
+func (t *trendAnomaly) getSign() float64 {
 	if t.InvertTrend {
 		return -1.0
 	}

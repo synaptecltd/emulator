@@ -12,39 +12,45 @@ import (
 type spikeAnomaly struct {
 	AnomalyBase
 
-	// Setters and getters are provided for private fields below to allow for error checking
+	// Private fields have setters for invalid value checking
+
 	Magnitude     float64 // magnitude of spikes, default 0
 	magFuncName   string  // name of the function used to vary the magnitude of the spikes, empty defaults to no functional modulation
 	VaryMagnitude bool    // whether apply Gaussian variation to magnitude of spikes, default false
 	spikeSign     float64 // the probability of spikes being positive or negative. default 0 (equally likely +/-). negative numbers favour negative spikes, positive numbers favour positive spikes
 
 	probability  float64 // magnitude of probability of spike in each time step, default 0
-	probFuncName string  // name of the function used to vary the probability of the spikes, empty defaults to no functional modulation
+	probFuncName string  // name of the function used to vary the probability of the spikes, empty defaults to constant =probability
 
 	// internal state
-	magFunction  mathfuncs.TrendFunction // returns spike anomaly magnitude for a given elapsed time, magntiude and period; set internally from FuncName
-	probFunction mathfuncs.TrendFunction // returns spike anomaly probability for a given elapsed time, magntiude and period; set internally from FuncName
+	magFunction  mathfuncs.TrendFunction // returns spike anomaly magnitude for a given elapsed time, magntiude and period; set internally from magFuncName
+	probFunction mathfuncs.TrendFunction // returns spike anomaly probability for a given elapsed time, magntiude and period; set internally from probFuncName
 }
 
-// Parameters used for spike anomaly.  All can be accessed publicly and used to define spikeAnomaly.
+// Parameters used to request a spike anomaly. These map onto the fields of spikeAnomaly.
 type SpikeParams struct {
-	Probability     float64 `yaml:"probability"`
-	Magnitude       float64 `yaml:"magnitude"`
-	VaryMagnitude   bool    `yaml:"vary_magnitude"`
-	Duration        float64 `yaml:"duration"`
-	StartDelay      float64 `yaml:"start_delay"`
-	Repeats         uint64  `yaml:"repeat"`
-	Off             bool    `yaml:"off"`
-	MagnitudeFunc   string  `yaml:"mag_func"`
-	ProbabilityFunc string  `yaml:"prob_func"`
-	SpikeSign       float64 `yaml:"spike_sign"`
+	// Defined in AnomalyBase
+
+	Repeats    uint64  `yaml:"repeat"`      // the number of times spike bursts repeat, 0 for infinite
+	Off        bool    `yaml:"off"`         // true: anomaly deactivated, false: activated
+	StartDelay float64 `yaml:"start_delay"` // the delay before spike bursts begin (and time between bursts) in seconds
+	Duration   float64 `yaml:"duration"`    // the duration of burst of spikes in seconds, 0 for continuous
+
+	// Defined in spikeAnomaly
+
+	Magnitude     float64 `yaml:"magnitude"`      // magnitude of spikes, default 0
+	MagFuncName   string  `yaml:"mag_func"`       // name of the function used to vary the magnitude of the spikes, empty defaults to no functional modulation
+	VaryMagnitude bool    `yaml:"vary_magnitude"` // whether apply Gaussian variation to magnitude of spikes, default false
+	SpikeSign     float64 `yaml:"spike_sign"`     // the probability of spikes being positive or negative. default 0 (equally likely +/-). negative numbers favour negative spikes, positive numbers favour positive spikes
+
+	Probability  float64 `yaml:"probability"` // magnitude of probability of spike in each time step, default 0
+	ProbFuncName string  `yaml:"prob_func"`   // name of the function used to vary the probability of the spikes, empty defaults to constant =probability
 }
 
 // Initialise the internal fields of SpikeAnomaly when it is unmarshalled from yaml.
 func (s *spikeAnomaly) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var params SpikeParams
-	err := unmarshal(&params)
-	if err != nil {
+	if err := unmarshal(&params); err != nil {
 		return err
 	}
 
@@ -71,10 +77,10 @@ func NewSpikeAnomaly(params SpikeParams) (*spikeAnomaly, error) {
 	if err := spikeAnomaly.SetProbability(params.Probability); err != nil {
 		return nil, err
 	}
-	if err := spikeAnomaly.SetMagFunctionByName(params.MagnitudeFunc); err != nil {
+	if err := spikeAnomaly.SetMagFunctionByName(params.MagFuncName); err != nil {
 		return nil, err
 	}
-	if err := spikeAnomaly.SetProbFunctionByName(params.ProbabilityFunc); err != nil {
+	if err := spikeAnomaly.SetProbFunctionByName(params.ProbFuncName); err != nil {
 		return nil, err
 	}
 	if err := spikeAnomaly.SetSpikeSign(params.SpikeSign); err != nil {
@@ -95,70 +101,70 @@ func NewSpikeAnomaly(params SpikeParams) (*spikeAnomaly, error) {
 }
 
 // Returns the change in signal caused by the instantaneous anomaly this timestep.
-func (ia *spikeAnomaly) stepAnomaly(r *rand.Rand, Ts float64) float64 {
-	if ia.Off {
+func (s *spikeAnomaly) stepAnomaly(r *rand.Rand, Ts float64) float64 {
+	if s.Off {
 		return 0.0
 	}
 
 	// Check if the spike anomaly is active this timestep
-	ia.isAnomalyActive = ia.CheckAnomalyActive(Ts)
-	if !ia.isAnomalyActive {
-		ia.startDelayIndex += 1
+	s.isAnomalyActive = s.CheckAnomalyActive(Ts)
+	if !s.isAnomalyActive {
+		s.startDelayIndex += 1
 		return 0.0
 	}
 
-	ia.elapsedActivatedTime = float64(ia.elapsedActivatedIndex) * Ts
+	s.elapsedActivatedTime = float64(s.elapsedActivatedIndex) * Ts
 
 	// No anomaly if probability is not met
-	probThisStep := ia.probability
-	if ia.probFunction != nil {
-		probThisStep = ia.probFunction(ia.elapsedActivatedTime, ia.probability, ia.duration)
+	probThisStep := s.probability
+	if s.probFunction != nil {
+		probThisStep = s.probFunction(s.elapsedActivatedTime, s.probability, s.duration)
 		// take positive values only
 		probThisStep = math.Abs(probThisStep)
 	}
 
 	if r.Float64() > probThisStep {
-		ia.isAnomalyActive = false
-		ia.elapsedActivatedIndex += 1 // still increment to keep the bursts spaced out
+		s.isAnomalyActive = false
+		s.elapsedActivatedIndex += 1 // still increment to keep the bursts spaced out
 		return 0.0
 	}
 
-	ia.isAnomalyActive = true
-	returnval := ia.Magnitude * ia.GetSpikeSignFromSpikeSign(r)
-	if ia.VaryMagnitude {
+	s.isAnomalyActive = true
+	returnval := s.Magnitude * s.getSign(r)
+	if s.VaryMagnitude {
 		returnval = returnval * r.NormFloat64()
 	}
 
 	// if duration is negative the spike anomaly is continuous and there is no need to worry about
 	// repeats or elapsedActivatedIndex or functions for magnitude
-	if ia.duration < 0 {
+	if s.duration < 0 {
 		return returnval
 	}
 
 	// If a function is set, use it to vary the magnitude of the spikes
-	if ia.magFunction != nil {
-		returnval = ia.magFunction(ia.elapsedActivatedTime, ia.Magnitude, ia.duration) * ia.GetSpikeSignFromSpikeSign(r)
+	if s.magFunction != nil {
+		returnval = s.magFunction(s.elapsedActivatedTime, s.Magnitude, s.duration) * s.getSign(r)
 	}
-	if ia.VaryMagnitude {
+	if s.VaryMagnitude {
 		returnval = returnval * r.NormFloat64()
 	}
 
-	ia.elapsedActivatedIndex += 1
+	s.elapsedActivatedIndex += 1
 
 	// If the spike anomaly is complete, reset the index and increment the repeat counter
-	if ia.elapsedActivatedIndex >= int(ia.duration/Ts)-1 {
-		ia.elapsedActivatedIndex = 0
-		ia.startDelayIndex = 0
-		ia.countRepeats += 1
+	if s.elapsedActivatedIndex >= int(s.duration/Ts)-1 {
+		s.elapsedActivatedIndex = 0
+		s.startDelayIndex = 0
+		s.countRepeats += 1
 	}
 
 	return returnval
 }
 
-// Returns -1.0 or +1.0 with a probability based on the SpikeSign parameter.
+// Returns -1.0 or +1.0 with a probability based on the spikeSign parameter.
 // If SpikeSign is 0, -1.0 and +1.0 are returned with equal probability.
-func (ia *spikeAnomaly) GetSpikeSignFromSpikeSign(r *rand.Rand) float64 {
-	if r.Float64()*2-1 > ia.spikeSign {
+func (s *spikeAnomaly) getSign(r *rand.Rand) float64 {
+	if r.Float64()*2-1 > s.spikeSign {
 		return -1.0
 	} else {
 		return 1.0

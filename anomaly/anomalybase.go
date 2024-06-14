@@ -8,18 +8,19 @@ import (
 
 // AnomalyBase is the base struct for all anomaly types.
 type AnomalyBase struct {
-	// Setters and getters are provided for private fields below to allow for error checking
-	typeName   string  // the type of anomaly
-	startDelay float64 // how many seconds before the anomalies begin
-	duration   float64 // the duration the anomalies occur for in seconds
-	Repeats    uint64  // the number of times the anomalies repeat, 0 for infinite
-	Off        bool    // true: anomaly deactivated, false: activated
+	Repeats uint64 // the number of times the anomalies repeat, 0 for infinite
+	Off     bool   // true: anomaly deactivated, false: activated
+
+	// Setters with error checking should be provided for private fields below
+	typeName   string  // the type of anomaly as a string, e.g. "trend", "spike".
+	startDelay float64 // the delay before anomalies begin (and between anomaly repeats) in seconds
+	duration   float64 // the duration of anomaly each anomaly repeat in seconds
 
 	// internal state
 	isAnomalyActive       bool    // whether the anomaly is actively modulating the waveform in this timestep
 	startDelayIndex       int     // startDelay converted to time steps, used to track delay period between anomaly repeats
-	elapsedActivatedIndex int     // number of time steps since start of active anomaly trend/burst, used to track the progress of anomaly trends/bursts
-	elapsedActivatedTime  float64 // time elapsed since the start of the active anomaly trend/burst
+	elapsedActivatedIndex int     // number of time steps since start of this active anomaly repeat, used to track the progress within an anomaly burst/trend
+	elapsedActivatedTime  float64 // time elapsed since the start of this active anomaly repeat
 	countRepeats          uint64  // counter for number of times the anomaly trend/burst has repeated
 }
 
@@ -28,12 +29,12 @@ func (a *AnomalyBase) GetTypeAsString() string {
 	return a.typeName
 }
 
-// Returns the start delay of anomaly trend/burst in seconds.
+// Returns the start delay of anomaly in seconds
 func (a *AnomalyBase) GetStartDelay() float64 {
 	return a.startDelay
 }
 
-// Returns the duration of each anomaly trend/burst in seconds.
+// Returns the duration of the anomaly in seconds.
 func (a *AnomalyBase) GetDuration() float64 {
 	return a.duration
 }
@@ -43,7 +44,7 @@ func (a *AnomalyBase) GetIsAnomalyActive() bool {
 	return a.isAnomalyActive
 }
 
-// Returns a.startDelay as a number of time steps.
+// Returns the start delay of the anomaly as a number of time steps.
 func (a *AnomalyBase) GetStartDelayIndex() int {
 	return a.startDelayIndex
 }
@@ -87,7 +88,7 @@ func (a *AnomalyBase) CheckAnomalyActive(Ts float64) bool {
 	return hasAnomalyStarted
 }
 
-// Set the fields funcName and funcVar of an anomaly by looking up the name of the function.
+// Set the fields funcName and funcVar of an anomaly by looking up a function name.
 func (a *AnomalyBase) SetFunctionByName(name string, funcSetter func(string) (mathfuncs.TrendFunction, error), funcName *string, funcVar *mathfuncs.TrendFunction) error {
 	if name == "" {
 		*funcName = name
