@@ -113,12 +113,13 @@ func (s *spikeAnomaly) stepAnomaly(r *rand.Rand, Ts float64) float64 {
 		return 0.0
 	}
 
-	// Update the elapsed time now to correctly calculate the probability of the spike
+	// Update the index after logging the current time
 	s.elapsedActivatedTime = float64(s.elapsedActivatedIndex) * Ts
+	s.elapsedActivatedIndex += 1
 
+	// Don't trigger if the probability is not met
 	if r.Float64() > s.FetchProbability() {
 		s.isAnomalyActive = false
-		s.elapsedActivatedIndex += 1 // still increment to keep spike bursts spaced correctly
 		return 0.0
 	}
 
@@ -134,8 +135,6 @@ func (s *spikeAnomaly) stepAnomaly(r *rand.Rand, Ts float64) float64 {
 	if s.VaryMagnitude {
 		spikeAnomalyDelta *= r.NormFloat64() // ... or modulated with a Gaussian
 	}
-
-	s.elapsedActivatedIndex += 1
 
 	// If the spike anomaly is complete, reset the index and increment the repeat counter
 	if s.elapsedActivatedIndex >= int(s.duration/Ts)-1 {

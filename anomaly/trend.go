@@ -95,11 +95,12 @@ func (t *trendAnomaly) stepAnomaly(_ *rand.Rand, Ts float64) float64 {
 		return 0.0
 	}
 
+	// Update the index after logging the current time
 	t.elapsedActivatedTime = float64(t.elapsedActivatedIndex) * Ts
+	t.elapsedActivatedIndex += 1
 
 	trendAnomalyMagnitude := t.magFunction(t.elapsedActivatedTime, t.Magnitude, t.duration)
 	trendAnomalyDelta := t.getSign() * trendAnomalyMagnitude
-	t.elapsedActivatedIndex += 1
 
 	// If the trend anomaly is complete, reset the index and increment the repeat counter
 	if t.elapsedActivatedIndex == int(t.duration/Ts) {
