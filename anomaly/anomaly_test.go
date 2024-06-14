@@ -10,12 +10,12 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// Test anomalies can be unmarshalled from yaml
 func TestUnmarshalYAML(t *testing.T) {
 	startDelay := rand.Float64()
 	duration := rand.Float64()
 	probability := rand.Float64()
 
-	// Define a YAML string that represents a trend anomaly.
 	yamlStr := fmt.Sprintf(`
 trend1:
   Type: trend
@@ -57,6 +57,7 @@ inst1:
 	}
 }
 
+// Get type of anomaly as string
 func TestGetTypeAsString(t *testing.T) {
 	instAnomaly, _ := anomaly.NewSpikeAnomaly(anomaly.SpikeParams{})
 	expected := "spike"

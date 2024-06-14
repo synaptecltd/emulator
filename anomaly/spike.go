@@ -8,7 +8,7 @@ import (
 	"github.com/synaptecltd/emulator/mathfuncs"
 )
 
-// SpikeAnomaly produces spikes in the data that occur at each timestep based on a probability factor.
+// Produces spikes in the data that occur at each timestep based on a probability factor.
 type spikeAnomaly struct {
 	AnomalyBase
 
