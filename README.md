@@ -93,13 +93,13 @@ MeanTemperature: 20.0
 NoiseMag: 0.1
 Anomaly:
   repeating_ramp:   # anomaly name
-    type: trend     # type of anomaly: trend
-    magnitude: 5    # params
-    duration: 0.7
+    Type: trend     # type of anomaly: trend
+    Magnitude: 5    # params
+    Duration: 0.7
   blips:            # anomaly name
-    type: spike     # type of anomaly: spike
-    probability: 0.01
-    magnitude: 2
+    Type: spike     # type of anomaly: spike
+    Probability: 0.01
+    Magnitude: 2
   # etc
 ```
 

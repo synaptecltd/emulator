@@ -18,12 +18,12 @@ func TestUnmarshalYAML(t *testing.T) {
 	// Define a YAML string that represents a trend anomaly.
 	yamlStr := fmt.Sprintf(`
 trend1:
-  type: trend
-  start_delay: %f
-  duration: %f
+  Type: trend
+  StartDelay: %f
+  Duration: %f
 inst1:
-  type: spike
-  probability: %f
+  Type: spike
+  Probability: %f
 `,
 		startDelay, duration, probability)
 

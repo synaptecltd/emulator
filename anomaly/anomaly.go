@@ -45,13 +45,13 @@ func (c *Container) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	// Match on the definition of the anomaly type
 	for key, value := range raw {
 		var anomaly AnomalyInterface
-		switch value["type"].(string) {
+		switch value["Type"].(string) {
 		case "spike":
 			anomaly = &spikeAnomaly{}
 		case "trend":
 			anomaly = &trendAnomaly{}
 		default:
-			return fmt.Errorf("unknown anomaly type: %s", value["type"].(string))
+			return fmt.Errorf("unknown anomaly type: %s", value["Type"].(string))
 		}
 
 		// Convert the value map into YAML for unmarshalling into an anomaly
