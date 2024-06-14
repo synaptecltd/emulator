@@ -22,7 +22,7 @@ trend1:
   start_delay: %f
   duration: %f
 inst1:
-  type: instantaneous
+  type: spike
   probability: %f
 `,
 		startDelay, duration, probability)
@@ -31,25 +31,31 @@ inst1:
 	err := yaml.Unmarshal([]byte(yamlStr), &container)
 	assert.NoError(t, err)
 
-	trendAnomaly, _ := anomaly.NewTrendAnomaly(anomaly.TrendParams{
-		StartDelay: startDelay,
-		Duration:   duration,
-	})
+	trendAnomaly, _ := anomaly.NewTrendAnomaly(
+		anomaly.TrendParams{
+			StartDelay: startDelay,
+			Duration:   duration,
+		})
 
-	instAnomaly := &anomaly.InstantaneousAnomaly{Probability: probability}
+	instAnomaly := &anomaly.SpikeAnomaly{Probability: probability}
 
-	// Todo fix this
-	for key, hello := range container {
-		if key == "trend1" {
-			assert.Equal(t, trendAnomaly, hello)
-		} else {
-			assert.Equal(t, instAnomaly, hello)
+	for _, anom := range container {
+		var expected anomaly.AnomalyInterface
+		switch anom.TypeAsString() {
+		case "trend":
+			expected = trendAnomaly
+		case "instantaneous":
+			expected = instAnomaly
 		}
+		assert.Equal(t, expected.TypeAsString(), anom.TypeAsString())
+		assert.InDelta(t, expected.GetDuration(), anom.GetDuration(), 1e-6) // floating point precision
+		assert.InDelta(t, expected.GetStartDelay(), anom.GetStartDelay(), 1e-6)
+
 	}
 }
 
 func TestGetTypeAsString(t *testing.T) {
-	instAnomaly := anomaly.InstantaneousAnomaly{}
+	instAnomaly := anomaly.SpikeAnomaly{}
 	expected := "instantaneous"
 	assert.Equal(t, expected, instAnomaly.TypeAsString())
 

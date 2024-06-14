@@ -5,7 +5,7 @@ import (
 	"math/rand/v2"
 
 	"github.com/google/uuid"
-	"github.com/mitchellh/mapstructure"
+	"gopkg.in/yaml.v2"
 )
 
 // Container is a collection of anomalies.
@@ -16,32 +16,41 @@ type AnomalyInterface interface {
 	UnmarshalYAML(unmarshal func(interface{}) error) error // Unmarshals an anomaly entry into the correct type based on the type field
 	TypeAsString() string                                  // Returns the anomaly type as a string
 	GetIsAnomalyActive() bool                              // Returns whether the anomaly is active this timestep
+	GetDuration() float64                                  // Returns the duration of each anomaly in seconds
+	GetStartDelay() float64                                // Returns the start time of anomalies in seconds
 	stepAnomaly(r *rand.Rand, Ts float64) float64          // Steps the internal time state of an anomaly and returns the change in signal caused by the anomaly
 }
 
 // UnmarshalYAML unmarshals an anomaly entry into the correct type base on the type field.
 func (c *Container) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var obj map[string]map[string]interface{}
-	if err := unmarshal(&obj); err != nil {
+	var raw map[string]map[string]interface{}
+	if err := unmarshal(&raw); err != nil {
 		return err
 	}
 
-	for name, anomalyData := range obj {
+	for key, value := range raw {
 		var anomaly AnomalyInterface
-		switch anomalyData["type"].(string) {
-		case "instantaneous":
-			anomaly = &InstantaneousAnomaly{}
+		switch value["type"].(string) {
+		case "spike":
+			anomaly = &SpikeAnomaly{}
 		case "trend":
 			anomaly = &trendAnomaly{}
 		default:
-			return fmt.Errorf("unknown anomaly type: %s", anomalyData["type"].(string))
+			return fmt.Errorf("unknown anomaly type: %s", value["type"].(string))
 		}
 
-		if err := mapstructure.Decode(anomalyData, anomaly); err != nil {
+		// Convert the value map back into YAML
+		valueYAML, err := yaml.Marshal(value)
+		if err != nil {
 			return err
 		}
 
-		(*c)[name] = anomaly
+		// Unmarshal the YAML into the anomaly
+		if err := yaml.Unmarshal(valueYAML, anomaly); err != nil {
+			return err
+		}
+
+		(*c)[key] = anomaly
 	}
 
 	return nil

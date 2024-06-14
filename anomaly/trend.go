@@ -43,7 +43,7 @@ type TrendParams struct {
 // Initialise the internal fields of TrendAnomaly when it is unmarshalled from yaml.
 func (t *trendAnomaly) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var params TrendParams
-	err := unmarshal(params)
+	err := unmarshal(&params)
 	if err != nil {
 		return err
 	}
@@ -92,7 +92,7 @@ func (t *trendAnomaly) SetDuration(duration float64) error {
 		return errors.New("duration must be positive value")
 	}
 	if duration == 0 {
-		t.Off = false
+		t.Off = true
 	}
 	t.duration = duration
 	return nil

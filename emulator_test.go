@@ -59,7 +59,7 @@ func TestTemperatureEmulationAnomalies_NoAnomalies(t *testing.T) {
 		MeanTemperature: 30.0,
 		NoiseMag:        0.01,
 		Anomaly: anomaly.Container{
-			anomalyKey: &anomaly.InstantaneousAnomaly{
+			anomalyKey: &anomaly.SpikeAnomaly{
 				Magnitude:   30,
 				Probability: 0.0, // never triggers
 			},
@@ -85,7 +85,7 @@ func TestTemperatureEmulationAnomalies_Anomalies(t *testing.T) {
 		MeanTemperature: 30.0,
 		NoiseMag:        0.01,
 		Anomaly: anomaly.Container{
-			anomalyKey: &anomaly.InstantaneousAnomaly{
+			anomalyKey: &anomaly.SpikeAnomaly{
 				Magnitude:   30,
 				Probability: 0.5,
 			},
