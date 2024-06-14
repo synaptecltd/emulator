@@ -8,7 +8,7 @@ import (
 	"github.com/synaptecltd/emulator/mathfuncs"
 )
 
-// Produces spikes in the data that occur at each timestep based on a probability factor.
+// Produces spikes in waveform data: these occur at each timestep based on a probability factor.
 type spikeAnomaly struct {
 	AnomalyBase
 
@@ -16,7 +16,7 @@ type spikeAnomaly struct {
 
 	Magnitude     float64 // magnitude of spikes, default 0
 	magFuncName   string  // name of the function used to vary the magnitude of the spikes, empty defaults to no functional modulation
-	VaryMagnitude bool    // whether apply Gaussian variation to magnitude of spikes, default false
+	VaryMagnitude bool    // whether to apply Gaussian variation to magnitude of spikes, default false
 	spikeSign     float64 // the probability of spikes being positive or negative. default 0 (equally likely +/-). negative numbers favour negative spikes, positive numbers favour positive spikes
 
 	probability  float64 // magnitude of probability of spike in each time step, default 0

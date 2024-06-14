@@ -7,9 +7,7 @@ import (
 	"github.com/synaptecltd/emulator/mathfuncs"
 )
 
-// trendAnomaly modulates data using repeated continuous functions.
-// The type is private so that it can only be created using NewTrendAnomaly or by
-// unmarshalling from yaml.
+// Modulates waveform data using continuous functions.
 type trendAnomaly struct {
 	AnomalyBase
 

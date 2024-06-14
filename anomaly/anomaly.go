@@ -12,7 +12,7 @@ import (
 // Container is a collection of anomalies.
 type Container map[string]AnomalyInterface
 
-// AnomalyInterface is the interface for all anomaly types (trends, instantaneous, etc).
+// AnomalyInterface is the interface for all anomaly Types (trends, instantaneous, etc).
 type AnomalyInterface interface {
 	UnmarshalYAML(unmarshal func(interface{}) error) error // Unmarshals an anomaly entry into the correct type based on the type field
 
@@ -32,12 +32,13 @@ type AnomalyInterface interface {
 	stepAnomaly(r *rand.Rand, Ts float64) float64 // Steps the internal time state of an anomaly and returns the change in signal caused by the anomaly
 }
 
-// Unmarshals a generic anomaly entry into the correct type base on the anomaly "type" field.
+// Unmarshals a generic anomaly entry into the correct type base on the anomaly "Type" field.
 func (c *Container) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	// If the container is nil, create a new one
+	// Create the container if passed an empty pointer
 	if *c == nil {
 		*c = make(Container)
 	}
+
 	var raw map[string]map[string]interface{}
 	if err := unmarshal(&raw); err != nil {
 		return err
