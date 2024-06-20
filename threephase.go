@@ -4,8 +4,8 @@ import (
 	"math"
 	"math/rand/v2"
 
+	"github.com/stevenblair/sigourney/fast"
 	"github.com/synaptecltd/emulator/anomaly"
-	"github.com/teknico/sigourney/fast"
 )
 
 const TwoPiOverThree = 2 * math.Pi / 3
@@ -48,7 +48,7 @@ type ThreePhaseEmulation struct {
 
 // Steps the three phase emulation forward by one time step. The new values are
 // defined based on magntiudes, noise values, anomalies and fault conditions.
-func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64, smpCnt int) {
+func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64) {
 	// frequency anomaly
 	totalAnomalyDeltaFrequency := e.FreqAnomaly.StepAll(r, Ts)
 	freqTotal := f + totalAnomalyDeltaFrequency

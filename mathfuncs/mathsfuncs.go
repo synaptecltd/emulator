@@ -4,6 +4,8 @@ import (
 	"errors"
 	"math"
 	"math/rand/v2"
+
+	"github.com/stevenblair/sigourney/fast"
 )
 
 // A mathematical function y=f(t,A,T). Takes amplitude, A, and period, T,
@@ -48,13 +50,13 @@ func linearRamp(t, A, T float64) float64 {
 // Returns a sine wave y=A*sin(2*pi*t/T) where A is the amplitude,
 // T is the period, and t is elapsed time.
 func sineWave(t, A, T float64) float64 {
-	return A * math.Sin(2*math.Pi*t/T)
+	return A * fast.Sin(2*math.Pi*t/T)
 }
 
 // Returns a cosine wave y=A*cos(2*pi*t/T) where A is the amplitude,
 // T is the period, and t is elapsed time.
 func cosineWave(t, A, T float64) float64 {
-	return A * math.Cos(2*math.Pi*t/T)
+	return A * fast.Cos(2*math.Pi*t/T)
 }
 
 // Returns an exponential ramp y=A*exp(t/T) - A where A is the amplitude,
@@ -65,7 +67,7 @@ func exponentialRamp(t, A, T float64) float64 {
 
 // Returns a parabolic ramp of amplitude A every period T.
 func parabolicRamp(t, A, T float64) float64 {
-	return A * math.Pow(t/T, 2)
+	return A * (t / T) * (t / T) // faster power of two compared to math.Pow(t/T, 2)
 }
 
 // Returns a step function of amplitude A every period T.
@@ -80,7 +82,7 @@ func stepFunction(t, A, T float64) float64 {
 // Returns a square wave y=A if sin(2*pi*t/T) >= 0, else -A.
 // where A is the amplitude, T is the period, and t is elapsed time.
 func squareWave(t, A, T float64) float64 {
-	if math.Sin(2*math.Pi*t/T) >= 0 {
+	if fast.Sin(2*math.Pi*t/T) >= 0 {
 		return A
 	} else {
 		return -A

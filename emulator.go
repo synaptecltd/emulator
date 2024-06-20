@@ -119,10 +119,10 @@ func (e *Emulator) Step() {
 	}
 
 	if e.V != nil {
-		e.V.stepThreePhase(e.r, f, e.Ts, e.SmpCnt)
+		e.V.stepThreePhase(e.r, f, e.Ts)
 	}
 	if e.I != nil {
-		e.I.stepThreePhase(e.r, f, e.Ts, e.SmpCnt)
+		e.I.stepThreePhase(e.r, f, e.Ts)
 	}
 	if e.T != nil {
 		e.T.stepTemperature(e.r, e.Ts)
