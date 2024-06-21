@@ -4,15 +4,17 @@ import (
 	"errors"
 	"math"
 	"math/rand/v2"
+
+	"github.com/stevenblair/sigourney/fast"
 )
 
 // A mathematical function y=f(t,A,T). Takes amplitude, A, and period, T,
 // as inputs and returns the value of the function at time, t.
-type TrendFunction func(t, A, T float64) float64
+type MathsFunction func(t, A, T float64) float64
 
 // A map between string name and trendFunction pairs
-var trendFunctions = map[string]TrendFunction{
-	"linear":            linearRamp, // default
+var mathsFunctions = map[string]MathsFunction{
+	"linear":            linearRamp,
 	"sine":              sineWave,
 	"cosine":            cosineWave,
 	"exponential":       exponentialRamp,
@@ -29,12 +31,8 @@ var trendFunctions = map[string]TrendFunction{
 }
 
 // Returns the named trend function. Defaults to linear if name is empty.
-func GetTrendFunctionFromName(name string) (TrendFunction, error) {
-	// Default to linear if no name is provided
-	if name == "" {
-		return trendFunctions["linear"], nil
-	}
-	trendFunc, ok := trendFunctions[name]
+func GetTrendFunctionFromName(name string) (MathsFunction, error) {
+	trendFunc, ok := mathsFunctions[name]
 	if !ok {
 		return nil, errors.New("trend function not found")
 	}
@@ -52,13 +50,13 @@ func linearRamp(t, A, T float64) float64 {
 // Returns a sine wave y=A*sin(2*pi*t/T) where A is the amplitude,
 // T is the period, and t is elapsed time.
 func sineWave(t, A, T float64) float64 {
-	return A * math.Sin(2*math.Pi*t/T)
+	return A * fast.Sin(2*math.Pi*t/T)
 }
 
 // Returns a cosine wave y=A*cos(2*pi*t/T) where A is the amplitude,
 // T is the period, and t is elapsed time.
 func cosineWave(t, A, T float64) float64 {
-	return A * math.Cos(2*math.Pi*t/T)
+	return A * fast.Cos(2*math.Pi*t/T)
 }
 
 // Returns an exponential ramp y=A*exp(t/T) - A where A is the amplitude,
@@ -69,7 +67,7 @@ func exponentialRamp(t, A, T float64) float64 {
 
 // Returns a parabolic ramp of amplitude A every period T.
 func parabolicRamp(t, A, T float64) float64 {
-	return A * math.Pow(t/T, 2)
+	return A * (t / T) * (t / T) // faster power of two compared to math.Pow(t/T, 2)
 }
 
 // Returns a step function of amplitude A every period T.
@@ -84,7 +82,7 @@ func stepFunction(t, A, T float64) float64 {
 // Returns a square wave y=A if sin(2*pi*t/T) >= 0, else -A.
 // where A is the amplitude, T is the period, and t is elapsed time.
 func squareWave(t, A, T float64) float64 {
-	if math.Sin(2*math.Pi*t/T) >= 0 {
+	if fast.Sin(2*math.Pi*t/T) >= 0 {
 		return A
 	} else {
 		return -A

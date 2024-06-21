@@ -4,7 +4,8 @@ import (
 	"math"
 	"math/rand/v2"
 
-	"github.com/teknico/sigourney/fast"
+	"github.com/stevenblair/sigourney/fast"
+	"github.com/synaptecltd/emulator/anomaly"
 )
 
 const TwoPiOverThree = 2 * math.Pi / 3
@@ -20,14 +21,14 @@ type ThreePhaseEmulation struct {
 	HarmonicNumbers []float64 `yaml:"HarmonicNumbers,flow,omitempty"` // harmonic numbers
 	HarmonicMags    []float64 `yaml:"HarmonicMags,flow,omitempty"`    // harmonic magnitudes in pu, relative to PosSeqMag
 	HarmonicAngs    []float64 `yaml:"HarmonicAngs,flow,omitempty"`    // harmonic angles
-	NoiseMax        float64   `yaml:"NoiseMax,omitempty"`             // magnitude of Gaussian noise
+	NoiseMag        float64   `yaml:"NoiseMag,omitempty"`             // magnitude of Gaussian noise
 
 	// define anomalies
-	PosSeqMagAnomaly AnomalyContainer // positive sequence magnitude anomaly
-	PosSeqAngAnomaly AnomalyContainer // positive sequence angle anomaly
-	PhaseAMagAnomaly AnomalyContainer // phase A magnitude anomaly
-	FreqAnomaly      AnomalyContainer // frequency anomaly
-	HarmonicsAnomaly AnomalyContainer // harmonics magnitude anomaly
+	PosSeqMagAnomaly anomaly.Container // positive sequence magnitude anomalies
+	PosSeqAngAnomaly anomaly.Container // positive sequence angle anomalies
+	PhaseAMagAnomaly anomaly.Container // phase A magnitude anomalies
+	FreqAnomaly      anomaly.Container // frequency anomalies
+	HarmonicsAnomaly anomaly.Container // harmonics magnitude anomalies
 
 	// event emulation
 	FaultPhaseAMag        float64 `yaml:"-"`
@@ -47,9 +48,9 @@ type ThreePhaseEmulation struct {
 
 // Steps the three phase emulation forward by one time step. The new values are
 // defined based on magntiudes, noise values, anomalies and fault conditions.
-func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64, smpCnt int) {
+func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64) {
 	// frequency anomaly
-	totalAnomalyDeltaFrequency := stepAllAnomalies(e.FreqAnomaly, r, Ts)
+	totalAnomalyDeltaFrequency := e.FreqAnomaly.StepAll(r, Ts)
 	freqTotal := f + totalAnomalyDeltaFrequency
 
 	angle := (freqTotal*2*math.Pi*Ts + e.pAngle)
@@ -57,7 +58,7 @@ func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64
 	e.pAngle = angle
 
 	// positive sequence angle anomaly
-	totalAnomalyDeltaPosSeqAng := stepAllAnomalies(e.PosSeqAngAnomaly, r, Ts)
+	totalAnomalyDeltaPosSeqAng := e.PosSeqAngAnomaly.StepAll(r, Ts)
 
 	PosSeqPhase := e.PhaseOffset + e.pAngle + (math.Pi * totalAnomalyDeltaPosSeqAng / 180.0)
 
@@ -73,11 +74,11 @@ func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64
 	}
 
 	// positive sequence magnitude anomaly
-	totalAnomalyDeltaPosSeqMag := stepAllAnomalies(e.PosSeqMagAnomaly, r, Ts)
+	totalAnomalyDeltaPosSeqMag := e.PosSeqMagAnomaly.StepAll(r, Ts)
 	posSeqMag += totalAnomalyDeltaPosSeqMag
 
 	// phase A magnitude anomaly
-	anomalyPhaseA := stepAllAnomalies(e.PhaseAMagAnomaly, r, Ts)
+	anomalyPhaseA := e.PhaseAMagAnomaly.StepAll(r, Ts)
 
 	// positive sequence
 	a1 := fast.Sin(PosSeqPhase) * (posSeqMag + anomalyPhaseA)
@@ -110,15 +111,15 @@ func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64
 		}
 	}
 
-	harmonicsScale := stepAllAnomalies(e.HarmonicsAnomaly, r, Ts)
+	harmonicsScale := e.HarmonicsAnomaly.StepAll(r, Ts)
 	ah = ah * (1 + harmonicsScale)
 	bh = bh * (1 + harmonicsScale)
 	ch = ch * (1 + harmonicsScale)
 
 	// add noise, ensure worst case where noise is uncorrelated across phases
-	ra := r.NormFloat64() * e.NoiseMax * e.PosSeqMag
-	rb := r.NormFloat64() * e.NoiseMax * e.PosSeqMag
-	rc := r.NormFloat64() * e.NoiseMax * e.PosSeqMag
+	ra := r.NormFloat64() * e.NoiseMag * e.PosSeqMag
+	rb := r.NormFloat64() * e.NoiseMag * e.PosSeqMag
+	rc := r.NormFloat64() * e.NoiseMag * e.PosSeqMag
 
 	// combine the output for each phase
 	e.A = a1 + a2 + abc0 + ah + ra
