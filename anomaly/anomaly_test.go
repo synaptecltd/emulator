@@ -67,3 +67,29 @@ func TestGetTypeAsString(t *testing.T) {
 	expected = "trend"
 	assert.Equal(t, expected, trendAnomaly.GetTypeAsString())
 }
+
+// Test converting AnomalyInterface to trendAnomaly
+func TestAsTrendAnomaly(t *testing.T) {
+	trendAnomaly, _ := anomaly.NewTrendAnomaly(anomaly.TrendParams{})
+	result, ok := anomaly.AsTrendAnomaly(trendAnomaly)
+	assert.True(t, ok)
+	assert.NotNil(t, result)
+
+	spikeAnomaly, _ := anomaly.NewSpikeAnomaly(anomaly.SpikeParams{})
+	result, ok = anomaly.AsTrendAnomaly(spikeAnomaly)
+	assert.False(t, ok)
+	assert.Nil(t, result)
+}
+
+// Test converting AnomalyInterface to spikeAnomaly
+func TestAsSpikeAnomaly(t *testing.T) {
+	trendAnomaly, _ := anomaly.NewTrendAnomaly(anomaly.TrendParams{})
+	result, ok := anomaly.AsSpikeAnomaly(trendAnomaly)
+	assert.False(t, ok)
+	assert.Nil(t, result)
+
+	spikeAnomaly, _ := anomaly.NewSpikeAnomaly(anomaly.SpikeParams{})
+	result, ok = anomaly.AsSpikeAnomaly(spikeAnomaly)
+	assert.True(t, ok)
+	assert.NotNil(t, result)
+}
