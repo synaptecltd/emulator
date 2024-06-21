@@ -32,6 +32,18 @@ type AnomalyInterface interface {
 	stepAnomaly(r *rand.Rand, Ts float64) float64 // Steps the internal time state of an anomaly and returns the change in signal caused by the anomaly
 }
 
+// Attempts to cast an AnomalyInterface to a trendAnomaly. Returns the anomaly as a trendAnomaly and boolean indicating success.
+func AsTrendAnomaly(a AnomalyInterface) (*trendAnomaly, bool) {
+	trendAnomaly, ok := a.(*trendAnomaly)
+	return trendAnomaly, ok
+}
+
+// Attempts to cast an AnomalyInterface to a SpikeAnomaly. Returns the anomaly as a SpikeAnomaly and boolean indicating success.
+func AsSpikeAnomaly(a AnomalyInterface) (*spikeAnomaly, bool) {
+	spikeAnomaly, ok := a.(*spikeAnomaly)
+	return spikeAnomaly, ok
+}
+
 // Unmarshals a generic anomaly entry into the correct type base on the anomaly "Type" field.
 func (c *Container) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	// Create the container if passed an empty pointer
