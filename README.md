@@ -78,7 +78,7 @@ for step < samplingRate {
 }
 ```
 
-Alternatively, emulators can be define via yaml:
+Alternatively, emulators can be defined via yaml:
 
 ```go
 fileBytes, _ := os.ReadFile("foo.yml")
