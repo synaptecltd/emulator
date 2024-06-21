@@ -38,7 +38,7 @@ func AsTrendAnomaly(a AnomalyInterface) (*trendAnomaly, bool) {
 	return trendAnomaly, ok
 }
 
-// Attempts to cast an AnomalyInterface to a SpikeAnomaly. Returns the anomaly as a SpikeAnomaly and boolean indicating success.
+// Attempts to cast an AnomalyInterface to a spikeAnomaly. Returns the anomaly as a spikeAnomaly and boolean indicating success.
 func AsSpikeAnomaly(a AnomalyInterface) (*spikeAnomaly, bool) {
 	spikeAnomaly, ok := a.(*spikeAnomaly)
 	return spikeAnomaly, ok
