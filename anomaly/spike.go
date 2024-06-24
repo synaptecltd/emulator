@@ -31,21 +31,21 @@ type spikeAnomaly struct {
 type SpikeParams struct {
 	// Defined in AnomalyBase
 
-	Uuid       string  `yaml:"Uuid"`       // unique identifier for the anomaly
-	Repeats    uint64  `yaml:"Repeats"`    // the number of times spike bursts repeat, 0 for infinite
-	Off        bool    `yaml:"Off"`        // true: anomaly deactivated, false: activated
-	StartDelay float64 `yaml:"StartDelay"` // the delay before spike bursts begin (and time between bursts) in seconds
-	Duration   float64 `yaml:"Duration"`   // the duration of burst of spikes in seconds, 0 for continuous
+	Uuid       string  `mapstructure:"Uuid" yaml:"Uuid"`             // unique identifier for the anomaly
+	Repeat     uint64  `mapstructure:"Repeat" yaml:"Repeat"`         // the number of times spike bursts repeat, 0 for infinite
+	Off        bool    `mapstructure:"Off" yaml:"Off"`               // true: anomaly deactivated, false: activated
+	StartDelay float64 `mapstructure:"StartDelay" yaml:"StartDelay"` // the delay before spike bursts begin (and time between bursts) in seconds
+	Duration   float64 `mapstructure:"Duration" yaml:"Duration"`     // the duration of burst of spikes in seconds, 0 for continuous
 
 	// Defined in spikeAnomaly
 
-	Magnitude     float64 `yaml:"Magnitude"`     // magnitude of spikes, default 0
-	MagFuncName   string  `yaml:"MagFunc"`       // name of the function used to vary the magnitude of the spikes, empty defaults to no functional modulation
-	VaryMagnitude bool    `yaml:"VaryMagnitude"` // whether apply Gaussian variation to magnitude of spikes, default false
-	SpikeSign     float64 `yaml:"Sign"`          // the probability of spikes being positive or negative. default 0 (equally likely +/-). negative numbers favour negative spikes, positive numbers favour positive spikes
+	Magnitude     float64 `mapstructure:"Magnitude" yaml:"Magnitude"`         // magnitude of spikes, default 0
+	MagFuncName   string  `mapstructure:"MagFunc" yaml:"MagFunc"`             // name of the function used to vary the magnitude of the spikes, empty defaults to no functional modulation
+	VaryMagnitude bool    `mapstructure:"VaryMagnitude" yaml:"VaryMagnitude"` // whether apply Gaussian variation to magnitude of spikes, default false
+	SpikeSign     float64 `mapstructure:"Sign" yaml:"Sign"`                   // the probability of spikes being positive or negative. default 0 (equally likely +/-). negative numbers favour negative spikes, positive numbers favour positive spikes
 
-	Probability  float64 `yaml:"Probability"` // magnitude of probability of spike in each time step, default 0
-	ProbFuncName string  `yaml:"ProbFunc"`    // name of the function used to vary the probability of the spikes, empty defaults to constant =probability
+	Probability  float64 `mapstructure:"Probability" yaml:"Probability"` // magnitude of probability of spike in each time step, default 0
+	ProbFuncName string  `mapstructure:"ProbFunc" yaml:"ProbFunc"`       // name of the function used to vary the probability of the spikes, empty defaults to constant =probability
 }
 
 // Initialise the internal fields of SpikeAnomaly when it is unmarshalled from yaml.
@@ -90,12 +90,15 @@ func NewSpikeAnomaly(params SpikeParams) (*spikeAnomaly, error) {
 	if err := spikeAnomaly.SetDuration(params.Duration); err != nil {
 		return nil, err
 	}
+	if err := spikeAnomaly.SetUuidFromString(params.Uuid); err != nil {
+		return nil, err
+	}
 
 	// Fields that can never be invalid set directly
 	spikeAnomaly.typeName = "spike"
 	spikeAnomaly.Magnitude = params.Magnitude
 	spikeAnomaly.VaryMagnitude = params.VaryMagnitude
-	spikeAnomaly.Repeats = params.Repeats
+	spikeAnomaly.Repeat = params.Repeat
 	spikeAnomaly.Off = params.Off
 
 	return spikeAnomaly, nil

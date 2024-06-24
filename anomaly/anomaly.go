@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/mitchellh/mapstructure"
 	"github.com/synaptecltd/emulator/mathfuncs"
-	"gopkg.in/yaml.v2"
 )
 
 // Container is a collection of anomalies.
@@ -23,6 +22,7 @@ type AnomalyInterface interface {
 	GetTypeAsString() string          // Returns the type of anomaly as a string
 	GetUuid() string                  // Returns the unique identifier for the anomaly as a string
 	SetUuid(uuid.UUID)                // Sets the unique identifier for the anomaly
+	SetUuidFromString(string) error   // Sets the unique identifier for the anomaly from a string representation
 	GetStartDelay() float64           // Returns the start time of anomalies in seconds
 	GetDuration() float64             // Returns the duration of each anomaly in seconds
 	GetIsAnomalyActive() bool         // Returns whether the anomaly is active this timestep
@@ -110,16 +110,102 @@ func createAnomalyFromYamlEntry(yamlEntry interface{}) (AnomalyInterface, error)
 		return nil, fmt.Errorf("unknown anomaly type: %s", typeStr)
 	}
 
-	// Unmarshal the yaml entry into the correct anomaly type
-	bytes, err := yaml.Marshal(m)
+	// Use mapstructure to decode the map into the AnomalyInterface
+	decoderConfig := &mapstructure.DecoderConfig{
+		DecodeHook: mapstructure.ComposeDecodeHookFunc(
+			mapstructure.TextUnmarshallerHookFunc(),
+			trendAnomalyDecodeHookFunc(),
+			spikeAnomalyDecodeHookFunc(),
+		),
+		Result: &ai,
+	}
+	decoder, err := mapstructure.NewDecoder(decoderConfig)
 	if err != nil {
 		return nil, err
 	}
-	if err := yaml.Unmarshal(bytes, ai); err != nil {
+	if err := decoder.Decode(m); err != nil {
 		return nil, err
 	}
 
 	return ai, nil
+}
+
+func trendAnomalyDecodeHookFunc() mapstructure.DecodeHookFuncType {
+	return func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+		if t == reflect.TypeOf(trendAnomaly{}) {
+			m, ok := data.(map[string]interface{})
+			if !ok {
+				return nil, fmt.Errorf("expected map[string]interface{}, got %T", data)
+			}
+
+			var params TrendParams
+			decoderConfig := &mapstructure.DecoderConfig{
+				DecodeHook: mapstructure.ComposeDecodeHookFunc(
+					mapstructure.StringToTimeDurationHookFunc(),
+					mapstructure.StringToSliceHookFunc(","),
+					mapstructure.TextUnmarshallerHookFunc(),
+				),
+				Result: &params,
+			}
+			decoder, err := mapstructure.NewDecoder(decoderConfig)
+			if err != nil {
+				return nil, err
+			}
+			if err := decoder.Decode(m); err != nil {
+				return nil, err
+			}
+
+			// Call your custom NewTrendAnomaly function here
+			trendAnomaly, err := NewTrendAnomaly(params)
+			if err != nil {
+				return nil, err
+			}
+
+			return trendAnomaly, nil
+		}
+
+		// If the type is not trendAnomaly, return the data unchanged
+		return data, nil
+	}
+}
+
+func spikeAnomalyDecodeHookFunc() mapstructure.DecodeHookFuncType {
+	return func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+		if t == reflect.TypeOf(spikeAnomaly{}) {
+			m, ok := data.(map[string]interface{})
+			if !ok {
+				return nil, fmt.Errorf("expected map[string]interface{}, got %T", data)
+			}
+
+			var params SpikeParams
+			decoderConfig := &mapstructure.DecoderConfig{
+				DecodeHook: mapstructure.ComposeDecodeHookFunc(
+					mapstructure.StringToTimeDurationHookFunc(),
+					mapstructure.StringToSliceHookFunc(","),
+					mapstructure.TextUnmarshallerHookFunc(),
+				),
+				Result: &params,
+			}
+			decoder, err := mapstructure.NewDecoder(decoderConfig)
+			if err != nil {
+				return nil, err
+			}
+			if err := decoder.Decode(m); err != nil {
+				return nil, err
+			}
+
+			// Call your custom NewSpikeAnomaly function here
+			spikeAnomaly, err := NewSpikeAnomaly(params)
+			if err != nil {
+				return nil, err
+			}
+
+			return spikeAnomaly, nil
+		}
+
+		// If the type is not spikeAnomaly, return the data unchanged
+		return data, nil
+	}
 }
 
 // Steps all anomalies within a container and returns the sum of their effects.

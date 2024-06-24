@@ -9,9 +9,9 @@ import (
 
 // AnomalyBase is the base struct for all anomaly types.
 type AnomalyBase struct {
-	Id      string // identifier for the anomaly, store as string for compatibility with yaml
-	Repeats uint64 // the number of times the anomalies repeat, 0 for infinite
-	Off     bool   // true: anomaly deactivated, false: activated
+	Uuid   string // identifier for the anomaly, store as string for compatibility with yaml
+	Repeat uint64 // the number of times the anomalies repeat, 0 for infinite
+	Off    bool   // true: anomaly deactivated, false: activated
 
 	// Setters with error checking should be provided for private fields below
 	typeName   string  // the type of anomaly as a string, e.g. "trend", "spike".
@@ -31,14 +31,28 @@ func (a *AnomalyBase) GetTypeAsString() string {
 	return a.typeName
 }
 
-// Returns the Id of the anomaly.
+// Returns the uuid of the anomaly.
 func (a *AnomalyBase) GetUuid() string {
-	return a.Id
+	return a.Uuid
 }
 
-// Sets the Id of the anomaly to uuid.
-func (a *AnomalyBase) SetUuid(uuid uuid.UUID) {
-	a.Id = uuid.String()
+// Sets the uuid of the anomaly to uuid.
+func (a *AnomalyBase) SetUuid(uuidId uuid.UUID) {
+	a.Uuid = uuidId.String()
+}
+
+// Set the uuid of the anomaly from a string representation.
+func (a *AnomalyBase) SetUuidFromString(uuidString string) error {
+	if uuidString == "" {
+		a.Uuid = uuid.Nil.String()
+		return nil
+	}
+	_, err := uuid.Parse(uuidString)
+	if err != nil {
+		return err
+	}
+	a.Uuid = uuidString
+	return nil
 }
 
 // Returns the start delay of anomaly in seconds
@@ -90,7 +104,7 @@ func (a *AnomalyBase) SetStartDelay(startDelay float64) error {
 //  1. Enough time has elapsed for the anomaly to start, and;
 //  2. The anomaly has not yet completed all repetitions.
 func (a *AnomalyBase) CheckAnomalyActive(Ts float64) bool {
-	moreRepeatsAllowed := a.countRepeats < a.Repeats || a.Repeats == 0 // 0 means infinite repetitions
+	moreRepeatsAllowed := a.countRepeats < a.Repeat || a.Repeat == 0 // 0 means infinite repetitions
 	if !moreRepeatsAllowed {
 		a.Off = true // switch the anomaly off if all repetitions are complete to save future computation
 		return false

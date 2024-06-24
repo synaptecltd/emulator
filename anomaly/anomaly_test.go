@@ -13,7 +13,7 @@ import (
 
 // Test anomalies can be unmarshalled from yaml
 func TestUnmarshalYAML(t *testing.T) {
-	uuid := uuid.New().String()
+	testUuid := uuid.New().String()
 	startDelay := rand.Float64()
 	duration := rand.Float64()
 	probability := rand.Float64()
@@ -24,10 +24,11 @@ func TestUnmarshalYAML(t *testing.T) {
   Uuid: %s
   StartDelay: %f
   Duration: %f
+  MagFunc: sine
 - type: spike
   Probability: %f
 `,
-		uuid, startDelay, duration, probability)
+		testUuid, startDelay, duration, probability)
 
 	container := anomaly.Container{}
 	err := yaml.Unmarshal([]byte(yamlStr), &container)
@@ -35,9 +36,10 @@ func TestUnmarshalYAML(t *testing.T) {
 
 	trendAnomaly, _ := anomaly.NewTrendAnomaly(
 		anomaly.TrendParams{
-			Uuid:       uuid,
-			StartDelay: startDelay,
-			Duration:   duration,
+			Uuid:        testUuid,
+			StartDelay:  startDelay,
+			Duration:    duration,
+			MagFuncName: "sine",
 		})
 
 	instAnomaly, _ := anomaly.NewSpikeAnomaly(
@@ -55,6 +57,7 @@ func TestUnmarshalYAML(t *testing.T) {
 		}
 		assert.Equal(t, expected.GetTypeAsString(), anom.GetTypeAsString())
 		assert.Equal(t, expected.GetUuid(), anom.GetUuid())
+		assert.NotEmpty(t, anom.GetUuid())                                  // uuid should be set to 00000000-0000-0000-0000-000000000000 if not provided
 		assert.InDelta(t, expected.GetDuration(), anom.GetDuration(), 1e-6) // floating point precision
 		assert.InDelta(t, expected.GetStartDelay(), anom.GetStartDelay(), 1e-6)
 

@@ -23,17 +23,17 @@ type trendAnomaly struct {
 type TrendParams struct {
 	// Defined in AnomalyBase
 
-	Uuid       string  `yaml:"Uuid"`       // unique identifier for the anomaly
-	Repeats    uint64  `yaml:"Repeat"`     // the number of times the trend anomaly repeats, 0 for infinite
-	Off        bool    `yaml:"Off"`        // true: anomaly deactivated, false: activated
-	StartDelay float64 `yaml:"StartDelay"` // the delay before trend anomalies begin (and between anomaly repeats) in seconds
-	Duration   float64 `yaml:"Duration"`   // the duration of each trend anomaly in seconds, 0 for continuous
+	Uuid       string  `mapstructure:"Uuid" yaml:"Uuid"`             // unique identifier for the anomaly
+	Repeat     uint64  `mapstructure:"Repeat" yaml:"Repeat"`         // the number of times the trend anomaly repeats, 0 for infinite
+	Off        bool    `mapstructure:"Off" yaml:"Off"`               // true: anomaly deactivated, false: activated
+	StartDelay float64 `mapstructure:"StartDelay" yaml:"StartDelay"` // the delay before trend anomalies begin (and between anomaly repeats) in seconds
+	Duration   float64 `mapstructure:"Duration" yaml:"Duration"`     // the duration of each trend anomaly in seconds, 0 for continuous
 
 	// Defined in trendAnomaly
 
-	Magnitude   float64 `yaml:"Magnitude"` // magnitude of trend anomaly, default 0
-	MagFuncName string  `yaml:"MagFunc"`   // name of the function used to vary the magnitude of the trend anomaly, empty defaults to "linear"
-	InvertTrend bool    `yaml:"Invert"`    // true inverts the trend function (multiplies by -1.0), default false (no inverting)
+	Magnitude   float64 `mapstructure:"Magnitude" yaml:"Magnitude"` // magnitude of trend anomaly, default 0
+	MagFuncName string  `mapstructure:"MagFunc" yaml:"MagFunc"`     // name of the function used to vary the magnitude of the trend anomaly, empty defaults to "linear"
+	InvertTrend bool    `mapstructure:"Invert" yaml:"Invert"`       // true inverts the trend function (multiplies by -1.0), default false (no inverting)
 }
 
 // Initialise the internal fields of TrendAnomaly when it is unmarshalled from yaml.
@@ -69,11 +69,14 @@ func NewTrendAnomaly(params TrendParams) (*trendAnomaly, error) {
 	if err := trendAnomaly.SetMagFunctionByName(params.MagFuncName); err != nil {
 		return nil, err
 	}
+	if err := trendAnomaly.SetUuidFromString(params.Uuid); err != nil {
+		return nil, err
+	}
 
 	// Fields that can never be invalid set directly
 	trendAnomaly.typeName = "trend"
 	trendAnomaly.Magnitude = params.Magnitude
-	trendAnomaly.Repeats = params.Repeats
+	trendAnomaly.Repeat = params.Repeat
 	trendAnomaly.InvertTrend = params.InvertTrend
 	trendAnomaly.Off = params.Off
 
