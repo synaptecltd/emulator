@@ -91,10 +91,13 @@ func createAnomalyFromYamlEntry(yamlEntry interface{}) (AnomalyInterface, error)
 		return nil, fmt.Errorf("yaml entry cannot be parsed to map[string]interface{}: %v", yamlEntry)
 	}
 
-	// must check m["type"] rather than m["Type"] because yaml parser makes all keys lowercase
+	// must check both m["type"] and m["Type"] because some yaml parsers convert to lower case and some don't
 	typeStr, ok := m["type"].(string)
 	if !ok {
-		return nil, errors.New("anomaly type field is missing or not a string")
+		typeStr, ok = m["Type"].(string)
+		if !ok {
+			return nil, errors.New("anomaly type field is missing or not a string")
+		}
 	}
 
 	var ai AnomalyInterface

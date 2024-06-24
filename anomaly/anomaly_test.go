@@ -16,11 +16,12 @@ func TestUnmarshalYAML(t *testing.T) {
 	duration := rand.Float64()
 	probability := rand.Float64()
 
+	// Should be able to cope with different capitalisation on "type" field
 	yamlStr := fmt.Sprintf(`
-- Type: trend
+- Type: "trend"
   StartDelay: %f
   Duration: %f
-- Type: spike
+- type: "spike"
   Probability: %f
 `,
 		startDelay, duration, probability)
