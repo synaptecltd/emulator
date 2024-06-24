@@ -49,83 +49,74 @@ func AsSpikeAnomaly(a AnomalyInterface) (*spikeAnomaly, bool) {
 	return spikeAnomaly, ok
 }
 
-// Unmarshals a generic anomaly entry into the correct type base on the anomaly "type" field.
+// Unmarshals a yaml file into the container.
 func (c *Container) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var aux []map[string]interface{}
-	if err := unmarshal(&aux); err != nil {
+	// Temporary structure to unmarshal the yaml file
+	var unmarshaledYaml []map[string]interface{}
+	if err := unmarshal(&unmarshaledYaml); err != nil {
 		return err
 	}
 
-	for _, m := range aux {
-		var a AnomalyInterface
-		// always check m["type"] with lower case regardless of the case in the yaml file because it is converted to lower case by the yaml parser
-		typeStr, ok := m["type"].(string)
-		if !ok {
-			return errors.New("type field is missing or not a string")
-		}
-		switch typeStr {
-		case "trend":
-			a = &trendAnomaly{}
-		case "spike":
-			a = &spikeAnomaly{}
-		default:
-			return fmt.Errorf("unknown anomaly type: %s", m["type"].(string))
-		}
-
-		bytes, err := yaml.Marshal(m)
+	for _, yamlEntry := range unmarshaledYaml {
+		ai, err := createAnomalyFromYamlEntry(yamlEntry)
 		if err != nil {
 			return err
 		}
-
-		if err := yaml.Unmarshal(bytes, a); err != nil {
-			return err
-		}
-
-		*c = append(*c, a)
+		*c = append(*c, ai)
 	}
 
 	return nil
 }
 
+// Returns a decodeHook function that can be used to unmarshal anomalies from a yaml file using mapstructure.
+// This supports configuration solutions like spf13/viper that use mapstructure to unmarshal yaml files.
 func GetDecodeHook() (mapstructure.DecodeHookFunc, error) {
-	decodeHook := func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+	decodeHook := func(f reflect.Type, t reflect.Type, yamlEntry interface{}) (interface{}, error) {
 		if t == reflect.TypeOf((*AnomalyInterface)(nil)).Elem() {
-			m, ok := data.(map[string]interface{})
-			if !ok {
-				return nil, fmt.Errorf("data is not a map[string]interface{}: %v", data)
-			}
-
-			var a AnomalyInterface
-			// always check m["type"] with lower case regardless of the case in the yaml file because it is converted to lower case by the yaml parser
-			typeStr, ok := m["type"].(string)
-			if !ok {
-				return nil, fmt.Errorf("type field is missing or not a string")
-			}
-			switch typeStr {
-			case "trend":
-				a = &trendAnomaly{}
-			case "spike":
-				a = &spikeAnomaly{}
-			default:
-				return nil, fmt.Errorf("unknown anomaly type: %s", m["type"].(string))
-			}
-
-			bytes, err := yaml.Marshal(m)
-			if err != nil {
-				return nil, err
-			}
-
-			if err := yaml.Unmarshal(bytes, a); err != nil {
-				return nil, err
-			}
-
-			return a, nil
+			// If the target type is AnomalyInterface, create the correct anomaly type from the yaml entry
+			return createAnomalyFromYamlEntry(yamlEntry)
 		}
-
-		// Fallback to the default behavior
-		return data, nil
+		// Otherwise, return the yaml entry as is (default behaviour)
+		return yamlEntry, nil
 	}
+
 	return decodeHook, nil
+}
+
+// Creates a generic anomaly from a yaml entry based on the anomaly "type" (or "Type") field.
+func createAnomalyFromYamlEntry(yamlEntry interface{}) (AnomalyInterface, error) {
+	// yaml entries should always be a string key with some sort of value
+	m, ok := yamlEntry.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("yaml entry cannot be parsed to map[string]interface{}: %v", yamlEntry)
+	}
+
+	// must check m["type"] rather than m["Type"] because yaml parser makes all keys lowercase
+	typeStr, ok := m["type"].(string)
+	if !ok {
+		return nil, errors.New("anomaly type field is missing or not a string")
+	}
+
+	var ai AnomalyInterface
+	switch typeStr {
+	case "trend":
+		ai = &trendAnomaly{}
+	case "spike":
+		ai = &spikeAnomaly{}
+	default:
+		return nil, fmt.Errorf("unknown anomaly type: %s", typeStr)
+	}
+
+	// Unmarshal the yaml entry into the correct anomaly type
+	bytes, err := yaml.Marshal(m)
+	if err != nil {
+		return nil, err
+	}
+	if err := yaml.Unmarshal(bytes, ai); err != nil {
+		return nil, err
+	}
+
+	return ai, nil
 }
 
 // Steps all anomalies within a container and returns the sum of their effects.
