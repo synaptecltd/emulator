@@ -21,7 +21,7 @@ type AnomalyInterface interface {
 
 	// Inherited from AnomalyBase
 	GetTypeAsString() string          // Returns the type of anomaly as a string
-	GetUuid() uuid.UUID               // Returns the unique identifier for the anomaly
+	GetUuid() string                  // Returns the unique identifier for the anomaly as a string
 	SetUuid(uuid.UUID)                // Sets the unique identifier for the anomaly
 	GetStartDelay() float64           // Returns the start time of anomalies in seconds
 	GetDuration() float64             // Returns the duration of each anomaly in seconds

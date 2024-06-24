@@ -5,6 +5,7 @@ import (
 	"math/rand/v2"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/synaptecltd/emulator/anomaly"
 	"gopkg.in/yaml.v2"
@@ -12,19 +13,21 @@ import (
 
 // Test anomalies can be unmarshalled from yaml
 func TestUnmarshalYAML(t *testing.T) {
+	uuid := uuid.New().String()
 	startDelay := rand.Float64()
 	duration := rand.Float64()
 	probability := rand.Float64()
 
 	// Should be able to cope with different capitalisation on "type" field
 	yamlStr := fmt.Sprintf(`
-- Type: "trend"
+- Type: trend
+  Uuid: %s
   StartDelay: %f
   Duration: %f
-- type: "spike"
+- type: spike
   Probability: %f
 `,
-		startDelay, duration, probability)
+		uuid, startDelay, duration, probability)
 
 	container := anomaly.Container{}
 	err := yaml.Unmarshal([]byte(yamlStr), &container)
@@ -32,6 +35,7 @@ func TestUnmarshalYAML(t *testing.T) {
 
 	trendAnomaly, _ := anomaly.NewTrendAnomaly(
 		anomaly.TrendParams{
+			Uuid:       uuid,
 			StartDelay: startDelay,
 			Duration:   duration,
 		})
@@ -50,6 +54,7 @@ func TestUnmarshalYAML(t *testing.T) {
 			expected = instAnomaly
 		}
 		assert.Equal(t, expected.GetTypeAsString(), anom.GetTypeAsString())
+		assert.Equal(t, expected.GetUuid(), anom.GetUuid())
 		assert.InDelta(t, expected.GetDuration(), anom.GetDuration(), 1e-6) // floating point precision
 		assert.InDelta(t, expected.GetStartDelay(), anom.GetStartDelay(), 1e-6)
 

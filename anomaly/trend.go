@@ -23,6 +23,7 @@ type trendAnomaly struct {
 type TrendParams struct {
 	// Defined in AnomalyBase
 
+	Uuid       string  `yaml:"Uuid"`       // unique identifier for the anomaly
 	Repeats    uint64  `yaml:"Repeat"`     // the number of times the trend anomaly repeats, 0 for infinite
 	Off        bool    `yaml:"Off"`        // true: anomaly deactivated, false: activated
 	StartDelay float64 `yaml:"StartDelay"` // the delay before trend anomalies begin (and between anomaly repeats) in seconds

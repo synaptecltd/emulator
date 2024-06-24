@@ -9,9 +9,9 @@ import (
 
 // AnomalyBase is the base struct for all anomaly types.
 type AnomalyBase struct {
-	Uuid    uuid.UUID // unique identifier for the anomaly
-	Repeats uint64    // the number of times the anomalies repeat, 0 for infinite
-	Off     bool      // true: anomaly deactivated, false: activated
+	Id      string // identifier for the anomaly, store as string for compatibility with yaml
+	Repeats uint64 // the number of times the anomalies repeat, 0 for infinite
+	Off     bool   // true: anomaly deactivated, false: activated
 
 	// Setters with error checking should be provided for private fields below
 	typeName   string  // the type of anomaly as a string, e.g. "trend", "spike".
@@ -31,14 +31,14 @@ func (a *AnomalyBase) GetTypeAsString() string {
 	return a.typeName
 }
 
-// Returns the uuid for the anomaly.
-func (a *AnomalyBase) GetUuid() uuid.UUID {
-	return a.Uuid
+// Returns the Id of the anomaly.
+func (a *AnomalyBase) GetUuid() string {
+	return a.Id
 }
 
-// Sets the uuid for the anomaly.
+// Sets the Id of the anomaly to uuid.
 func (a *AnomalyBase) SetUuid(uuid uuid.UUID) {
-	a.Uuid = uuid
+	a.Id = uuid.String()
 }
 
 // Returns the start delay of anomaly in seconds

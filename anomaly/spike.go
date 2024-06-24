@@ -31,6 +31,7 @@ type spikeAnomaly struct {
 type SpikeParams struct {
 	// Defined in AnomalyBase
 
+	Uuid       string  `yaml:"Uuid"`       // unique identifier for the anomaly
 	Repeats    uint64  `yaml:"Repeats"`    // the number of times spike bursts repeat, 0 for infinite
 	Off        bool    `yaml:"Off"`        // true: anomaly deactivated, false: activated
 	StartDelay float64 `yaml:"StartDelay"` // the delay before spike bursts begin (and time between bursts) in seconds
