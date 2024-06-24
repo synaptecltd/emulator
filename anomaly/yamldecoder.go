@@ -69,11 +69,12 @@ func createAnomalyFromYamlEntry(yamlEntry interface{}) (AnomalyInterface, error)
 		return nil, fmt.Errorf("unknown anomaly type: %s", typeStr)
 	}
 
-	// Use mapstructure to decode the map into the AnomalyInterface
+	// Use mapstructure to decode the map into AnomalyInterface
 	decoderConfig := &mapstructure.DecoderConfig{
 		DecodeHook: mapstructure.ComposeDecodeHookFunc(
-			trendAnomalyDecodeHookFunc(),
-			spikeAnomalyDecodeHookFunc(),
+			trendAnomalyDecodeHookFunc(), // decodeHook for trendAnomaly
+			spikeAnomalyDecodeHookFunc(), // decodeHook for spikeAnomaly
+			// add more decoders here as required
 		),
 		Result: &ai,
 	}
@@ -92,15 +93,12 @@ func createAnomalyFromYamlEntry(yamlEntry interface{}) (AnomalyInterface, error)
 func trendAnomalyDecodeHookFunc() mapstructure.DecodeHookFuncType {
 	return func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
 		if t == reflect.TypeOf(trendAnomaly{}) {
+			// unmarshal into TrendParams and use constructor function to create trendAnomaly
 			var params TrendParams
-
 			anomalyParamsDecodeHookFunc(&params, data)
-
-			// Use constructor to create the trendAnomaly for its error checking
 			return NewTrendAnomaly(params)
 		}
-
-		// If the type is not trendAnomaly, return the data unchanged
+		// If the type is not trendAnomaly, return data unchanged
 		return data, nil
 	}
 }
@@ -109,21 +107,18 @@ func trendAnomalyDecodeHookFunc() mapstructure.DecodeHookFuncType {
 func spikeAnomalyDecodeHookFunc() mapstructure.DecodeHookFuncType {
 	return func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
 		if t == reflect.TypeOf(spikeAnomaly{}) {
+			// unmarshal into SpikeParams and use constructor function to create spikeAnomaly
 			var params SpikeParams
-
 			anomalyParamsDecodeHookFunc(&params, data)
-
-			// Use constructor to create the spikeAnomaly for its error checking
 			return NewSpikeAnomaly(params)
 		}
-
-		// If the type is not spikeAnomaly, return the data unchanged
+		// If the type is not spikeAnomaly, return data unchanged
 		return data, nil
 	}
 }
 
-// Uses mapstructure to unmarshal data into an anomaly params struct.
-func anomalyParamsDecodeHookFunc[T any](params *T, data interface{}) error {
+// Use mapstructure to unmarshal data into anomalyParams.
+func anomalyParamsDecodeHookFunc[T any](anomalyParams *T, data interface{}) error {
 	m, ok := data.(map[string]interface{})
 	if !ok {
 		return fmt.Errorf("expected map[string]interface{}, got %T", data)
@@ -133,7 +128,7 @@ func anomalyParamsDecodeHookFunc[T any](params *T, data interface{}) error {
 		DecodeHook: mapstructure.ComposeDecodeHookFunc(
 			mapstructure.TextUnmarshallerHookFunc(), // parses Uuids
 		),
-		Result: &params,
+		Result: &anomalyParams,
 	}
 	decoder, err := mapstructure.NewDecoder(decoderConfig)
 	if err != nil {
