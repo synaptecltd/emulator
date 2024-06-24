@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand/v2"
 
+	"github.com/google/uuid"
 	"github.com/synaptecltd/emulator/mathfuncs"
 	"gopkg.in/yaml.v2"
 )
@@ -17,6 +18,8 @@ type AnomalyInterface interface {
 
 	// Inherited from AnomalyBase
 	GetTypeAsString() string          // Returns the type of anomaly as a string
+	GetUuid() uuid.UUID               // Returns the unique identifier for the anomaly
+	SetUuid(uuid.UUID)                // Sets the unique identifier for the anomaly
 	GetStartDelay() float64           // Returns the start time of anomalies in seconds
 	GetDuration() float64             // Returns the duration of each anomaly in seconds
 	GetIsAnomalyActive() bool         // Returns whether the anomaly is active this timestep
@@ -86,8 +89,10 @@ func (c Container) StepAll(r *rand.Rand, Ts float64) float64 {
 	return value
 }
 
-// Add anomaly to container
-func (c *Container) AddAnomaly(anomaly AnomalyInterface) int {
+// Add anomaly to container returning the uuid of the added anomaly.
+func (c *Container) AddAnomaly(anomaly AnomalyInterface) uuid.UUID {
+	uuid := uuid.New()
+	anomaly.SetUuid(uuid)
 	*c = append(*c, anomaly)
-	return len(*c) - 1
+	return uuid
 }

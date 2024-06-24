@@ -3,6 +3,7 @@ package emulator
 import (
 	"math/rand/v2"
 
+	"github.com/google/uuid"
 	"github.com/synaptecltd/emulator/anomaly"
 )
 
@@ -22,7 +23,7 @@ func (t *TemperatureEmulation) stepTemperature(r *rand.Rand, Ts float64) {
 	t.T += anomalyValues
 }
 
-// Add an anomaly to the temperature emulation.
-func (t *TemperatureEmulation) AddAnomaly(anom anomaly.AnomalyInterface) {
-	t.Anomaly.AddAnomaly(anom)
+// Add an anomaly to the temperature emulation, returning the UUID of the added anomaly.
+func (t *TemperatureEmulation) AddAnomaly(anom anomaly.AnomalyInterface) uuid.UUID {
+	return t.Anomaly.AddAnomaly(anom)
 }

@@ -3,13 +3,15 @@ package anomaly
 import (
 	"errors"
 
+	"github.com/google/uuid"
 	"github.com/synaptecltd/emulator/mathfuncs"
 )
 
 // AnomalyBase is the base struct for all anomaly types.
 type AnomalyBase struct {
-	Repeats uint64 // the number of times the anomalies repeat, 0 for infinite
-	Off     bool   // true: anomaly deactivated, false: activated
+	Uuid    uuid.UUID // unique identifier for the anomaly
+	Repeats uint64    // the number of times the anomalies repeat, 0 for infinite
+	Off     bool      // true: anomaly deactivated, false: activated
 
 	// Setters with error checking should be provided for private fields below
 	typeName   string  // the type of anomaly as a string, e.g. "trend", "spike".
@@ -27,6 +29,16 @@ type AnomalyBase struct {
 // Returns the type of anomaly as a string.
 func (a *AnomalyBase) GetTypeAsString() string {
 	return a.typeName
+}
+
+// Returns the uuid for the anomaly.
+func (a *AnomalyBase) GetUuid() uuid.UUID {
+	return a.Uuid
+}
+
+// Sets the uuid for the anomaly.
+func (a *AnomalyBase) SetUuid(uuid uuid.UUID) {
+	a.Uuid = uuid
 }
 
 // Returns the start delay of anomaly in seconds

@@ -58,8 +58,8 @@ emu.I = &emulator.ThreePhaseEmulation{
 // Create an anomaly container for temperature and add anomalies
 container := anomaly.Container{}
 spikes.Magnitude = 1.0 // re-use an anomaly with reduced magnitude
-container.AddAnomaly(spikes)
-container.AddAnomaly(ramp)
+_ = container.AddAnomaly(spikes) // returns uuid of anomaly
+_ = container.AddAnomaly(ramp)
 
 // Specify tempertaure parameters
 emu.T = &emulator.TemperatureEmulation{
