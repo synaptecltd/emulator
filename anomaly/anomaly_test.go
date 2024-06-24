@@ -17,17 +17,15 @@ func TestUnmarshalYAML(t *testing.T) {
 	probability := rand.Float64()
 
 	yamlStr := fmt.Sprintf(`
-trend1:
-  Type: trend
+- Type: trend
   StartDelay: %f
   Duration: %f
-inst1:
-  Type: spike
+- Type: spike
   Probability: %f
 `,
 		startDelay, duration, probability)
 
-	container := make(anomaly.Container)
+	container := anomaly.Container{}
 	err := yaml.Unmarshal([]byte(yamlStr), &container)
 	assert.NoError(t, err)
 

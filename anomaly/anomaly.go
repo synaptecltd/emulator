@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"math/rand/v2"
 
-	"github.com/google/uuid"
 	"github.com/synaptecltd/emulator/mathfuncs"
 	"gopkg.in/yaml.v2"
 )
 
 // Container is a collection of anomalies.
-type Container map[string]AnomalyInterface
+type Container []AnomalyInterface
 
 // AnomalyInterface is the interface for all anomaly Types (trends, instantaneous, etc).
 type AnomalyInterface interface {
@@ -46,39 +45,32 @@ func AsSpikeAnomaly(a AnomalyInterface) (*spikeAnomaly, bool) {
 
 // Unmarshals a generic anomaly entry into the correct type base on the anomaly "Type" field.
 func (c *Container) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	// Create the container if passed an empty pointer
-	if *c == nil {
-		*c = make(Container)
-	}
-
-	var raw map[string]map[string]interface{}
-	if err := unmarshal(&raw); err != nil {
+	var aux []map[string]interface{}
+	if err := unmarshal(&aux); err != nil {
 		return err
 	}
-	// Match on the definition of the anomaly type
-	for key, value := range raw {
-		var anomaly AnomalyInterface
-		switch value["Type"].(string) {
-		case "spike":
-			anomaly = &spikeAnomaly{}
+
+	for _, m := range aux {
+		var a AnomalyInterface
+		switch m["Type"].(string) {
 		case "trend":
-			anomaly = &trendAnomaly{}
+			a = &trendAnomaly{}
+		case "spike":
+			a = &spikeAnomaly{}
 		default:
-			return fmt.Errorf("unknown anomaly type: %s", value["Type"].(string))
+			return fmt.Errorf("unknown anomaly type: %s", m["Type"].(string))
 		}
 
-		// Convert the value map into YAML for unmarshalling into an anomaly
-		valueYAML, err := yaml.Marshal(value)
+		bytes, err := yaml.Marshal(m)
 		if err != nil {
 			return err
 		}
 
-		// Unmarshal the YAML into the anomaly
-		if err := yaml.Unmarshal(valueYAML, anomaly); err != nil {
+		if err := yaml.Unmarshal(bytes, a); err != nil {
 			return err
 		}
 
-		(*c)[key] = anomaly
+		*c = append(*c, a)
 	}
 
 	return nil
@@ -94,9 +86,8 @@ func (c Container) StepAll(r *rand.Rand, Ts float64) float64 {
 	return value
 }
 
-// Add anomaly to container with a UUID and returns the UUID.
-func (c *Container) AddAnomaly(anomaly AnomalyInterface) uuid.UUID {
-	uuid := uuid.New()
-	(*c)[uuid.String()] = anomaly
-	return uuid
+// Add anomaly to container
+func (c *Container) AddAnomaly(anomaly AnomalyInterface) int {
+	*c = append(*c, anomaly)
+	return len(*c) - 1
 }
