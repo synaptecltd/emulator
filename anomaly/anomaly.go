@@ -1,10 +1,13 @@
 package anomaly
 
 import (
+	"errors"
 	"fmt"
 	"math/rand/v2"
+	"reflect"
 
 	"github.com/google/uuid"
+	"github.com/mitchellh/mapstructure"
 	"github.com/synaptecltd/emulator/mathfuncs"
 	"gopkg.in/yaml.v2"
 )
@@ -46,7 +49,7 @@ func AsSpikeAnomaly(a AnomalyInterface) (*spikeAnomaly, bool) {
 	return spikeAnomaly, ok
 }
 
-// Unmarshals a generic anomaly entry into the correct type base on the anomaly "Type" field.
+// Unmarshals a generic anomaly entry into the correct type base on the anomaly "type" field.
 func (c *Container) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var aux []map[string]interface{}
 	if err := unmarshal(&aux); err != nil {
@@ -55,13 +58,18 @@ func (c *Container) UnmarshalYAML(unmarshal func(interface{}) error) error {
 
 	for _, m := range aux {
 		var a AnomalyInterface
-		switch m["Type"].(string) {
+		// always check m["type"] with lower case regardless of the case in the yaml file because it is converted to lower case by the yaml parser
+		typeStr, ok := m["type"].(string)
+		if !ok {
+			return errors.New("type field is missing or not a string")
+		}
+		switch typeStr {
 		case "trend":
 			a = &trendAnomaly{}
 		case "spike":
 			a = &spikeAnomaly{}
 		default:
-			return fmt.Errorf("unknown anomaly type: %s", m["Type"].(string))
+			return fmt.Errorf("unknown anomaly type: %s", m["type"].(string))
 		}
 
 		bytes, err := yaml.Marshal(m)
@@ -77,6 +85,47 @@ func (c *Container) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	}
 
 	return nil
+}
+
+func GetDecodeHook() (mapstructure.DecodeHookFunc, error) {
+	decodeHook := func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+		if t == reflect.TypeOf((*AnomalyInterface)(nil)).Elem() {
+			m, ok := data.(map[string]interface{})
+			if !ok {
+				return nil, fmt.Errorf("data is not a map[string]interface{}: %v", data)
+			}
+
+			var a AnomalyInterface
+			// always check m["type"] with lower case regardless of the case in the yaml file because it is converted to lower case by the yaml parser
+			typeStr, ok := m["type"].(string)
+			if !ok {
+				return nil, fmt.Errorf("type field is missing or not a string")
+			}
+			switch typeStr {
+			case "trend":
+				a = &trendAnomaly{}
+			case "spike":
+				a = &spikeAnomaly{}
+			default:
+				return nil, fmt.Errorf("unknown anomaly type: %s", m["type"].(string))
+			}
+
+			bytes, err := yaml.Marshal(m)
+			if err != nil {
+				return nil, err
+			}
+
+			if err := yaml.Unmarshal(bytes, a); err != nil {
+				return nil, err
+			}
+
+			return a, nil
+		}
+
+		// Fallback to the default behavior
+		return data, nil
+	}
+	return decodeHook, nil
 }
 
 // Steps all anomalies within a container and returns the sum of their effects.
