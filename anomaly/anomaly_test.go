@@ -57,10 +57,8 @@ func TestUnmarshalYAML(t *testing.T) {
 		}
 		assert.Equal(t, expected.GetTypeAsString(), anom.GetTypeAsString())
 		assert.Equal(t, expected.GetUuid(), anom.GetUuid())
-		assert.NotEmpty(t, anom.GetUuid())                                  // uuid should be set to 00000000-0000-0000-0000-000000000000 if not provided
 		assert.InDelta(t, expected.GetDuration(), anom.GetDuration(), 1e-6) // floating point precision
 		assert.InDelta(t, expected.GetStartDelay(), anom.GetStartDelay(), 1e-6)
-
 	}
 }
 

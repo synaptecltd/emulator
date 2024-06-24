@@ -9,9 +9,9 @@ import (
 
 // AnomalyBase is the base struct for all anomaly types.
 type AnomalyBase struct {
-	Uuid   string // identifier for the anomaly, store as string for compatibility with yaml
-	Repeat uint64 // the number of times the anomalies repeat, 0 for infinite
-	Off    bool   // true: anomaly deactivated, false: activated
+	Uuid   uuid.UUID // identifier for the anomaly, store as string for compatibility with yaml
+	Repeat uint64    // the number of times the anomalies repeat, 0 for infinite
+	Off    bool      // true: anomaly deactivated, false: activated
 
 	// Setters with error checking should be provided for private fields below
 	typeName   string  // the type of anomaly as a string, e.g. "trend", "spike".
@@ -32,26 +32,27 @@ func (a *AnomalyBase) GetTypeAsString() string {
 }
 
 // Returns the uuid of the anomaly.
-func (a *AnomalyBase) GetUuid() string {
+func (a *AnomalyBase) GetUuid() uuid.UUID {
 	return a.Uuid
 }
 
 // Sets the uuid of the anomaly to uuid.
 func (a *AnomalyBase) SetUuid(uuidId uuid.UUID) {
-	a.Uuid = uuidId.String()
+	a.Uuid = uuidId
 }
 
-// Set the uuid of the anomaly from a string representation.
+// Set the uuid of the anomaly from a string representation. Returns an error if the string is not a valid uuid.
+// If the string is empty, the uuid is set to 00000000-0000-0000-0000-000000000000.
 func (a *AnomalyBase) SetUuidFromString(uuidString string) error {
 	if uuidString == "" {
-		a.Uuid = uuid.Nil.String()
+		a.Uuid = uuid.Nil
 		return nil
 	}
-	_, err := uuid.Parse(uuidString)
+	uuidId, err := uuid.Parse(uuidString)
 	if err != nil {
 		return err
 	}
-	a.Uuid = uuidString
+	a.Uuid = uuidId
 	return nil
 }
 

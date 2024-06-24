@@ -20,7 +20,7 @@ type AnomalyInterface interface {
 
 	// Inherited from AnomalyBase
 	GetTypeAsString() string          // Returns the type of anomaly as a string
-	GetUuid() string                  // Returns the unique identifier for the anomaly as a string
+	GetUuid() uuid.UUID               // Returns the unique identifier for the anomaly as a string
 	SetUuid(uuid.UUID)                // Sets the unique identifier for the anomaly
 	SetUuidFromString(string) error   // Sets the unique identifier for the anomaly from a string representation
 	GetStartDelay() float64           // Returns the start time of anomalies in seconds
@@ -141,9 +141,7 @@ func trendAnomalyDecodeHookFunc() mapstructure.DecodeHookFuncType {
 			var params TrendParams
 			decoderConfig := &mapstructure.DecoderConfig{
 				DecodeHook: mapstructure.ComposeDecodeHookFunc(
-					mapstructure.StringToTimeDurationHookFunc(),
-					mapstructure.StringToSliceHookFunc(","),
-					mapstructure.TextUnmarshallerHookFunc(),
+					mapstructure.TextUnmarshallerHookFunc(), // parses Uuids
 				),
 				Result: &params,
 			}
@@ -180,9 +178,7 @@ func spikeAnomalyDecodeHookFunc() mapstructure.DecodeHookFuncType {
 			var params SpikeParams
 			decoderConfig := &mapstructure.DecoderConfig{
 				DecodeHook: mapstructure.ComposeDecodeHookFunc(
-					mapstructure.StringToTimeDurationHookFunc(),
-					mapstructure.StringToSliceHookFunc(","),
-					mapstructure.TextUnmarshallerHookFunc(),
+					mapstructure.TextUnmarshallerHookFunc(), // parses uuids
 				),
 				Result: &params,
 			}
