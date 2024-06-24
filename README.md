@@ -93,6 +93,7 @@ MeanTemperature: 20.0
 NoiseMag: 0.1
 Anomaly:
   - Type: trend     # type of anomaly: trend
+    # Uuid: optionally define a uuid here
     Magnitude: 5    # params
     Duration: 0.7
   - Type: spike     # type of anomaly: spike
