@@ -12,7 +12,7 @@ const TwoPiOverThree = 2 * math.Pi / 3
 
 type ThreePhaseEmulation struct {
 	// inputs
-	PosSeqMag       float64   `yaml:"PosSeqMag"`                      // positive sequence magnitude
+	PosSeqMag       float64   `yaml:"PosSeqMag,omitempty"`            // positive sequence magnitude
 	PhaseOffset     float64   `yaml:"PhaseOffset,omitempty"`          // phase offset
 	NegSeqMag       float64   `yaml:"NegSeqMag,omitempty"`            // negative sequence magnitude
 	NegSeqAng       float64   `yaml:"NegSeqAng,omitempty"`            // negative sequence angle
@@ -24,23 +24,21 @@ type ThreePhaseEmulation struct {
 	NoiseMag        float64   `yaml:"NoiseMag,omitempty"`             // magnitude of Gaussian noise
 
 	// define anomalies
-	PosSeqMagAnomaly anomaly.Container // positive sequence magnitude anomalies
-	PosSeqAngAnomaly anomaly.Container // positive sequence angle anomalies
-	PhaseAMagAnomaly anomaly.Container // phase A magnitude anomalies
-	FreqAnomaly      anomaly.Container // frequency anomalies
-	HarmonicsAnomaly anomaly.Container // harmonics magnitude anomalies
+	PosSeqMagAnomaly anomaly.Container `yaml:"PosSeqMagAnomaly,omitempty"` // positive sequence magnitude anomalies
+	PosSeqAngAnomaly anomaly.Container `yaml:"PosSeqAngAnomaly,omitempty"` // positive sequence angle anomalies
+	PhaseAMagAnomaly anomaly.Container `yaml:"PhaseAMagAnomaly,omitempty"` // phase A magnitude anomalies
+	FreqAnomaly      anomaly.Container `yaml:"FreqAnomaly,omitempty"`      // frequency anomalies
+	HarmonicsAnomaly anomaly.Container `yaml:"HarmonicsAnomaly,omitempty"` // harmonics anomalies
 
 	// event emulation
-	FaultPhaseAMag        float64 `yaml:"-"`
-	FaultPosSeqMag        float64 `yaml:"-"`
-	FaultRemainingSamples int     `yaml:"-"`
+	faultPhaseAMag        float64
+	faultPosSeqMag        float64
+	faultRemainingSamples int
 
-	// state change
-	PosSeqMagNew      float64 `yaml:"-"`
-	PosSeqMagRampRate float64 `yaml:"-"`
-
-	// internal state
-	pAngle float64 `yaml:"-"`
+	// internal state, state change
+	pAngle            float64
+	posSeqMagNew      float64
+	posSeqMagRampRate float64
 
 	// outputs
 	A, B, C float64 `yaml:"-"`
@@ -62,15 +60,15 @@ func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64
 
 	PosSeqPhase := e.PhaseOffset + e.pAngle + (math.Pi * totalAnomalyDeltaPosSeqAng / 180.0)
 
-	if math.Abs(e.PosSeqMagNew-e.PosSeqMag) >= math.Abs(e.PosSeqMagRampRate) {
-		e.PosSeqMag = e.PosSeqMag + e.PosSeqMagRampRate
+	if math.Abs(e.posSeqMagNew-e.PosSeqMag) >= math.Abs(e.posSeqMagRampRate) {
+		e.PosSeqMag = e.PosSeqMag + e.posSeqMagRampRate
 	}
 
 	posSeqMag := e.PosSeqMag
 	// phaseAMag := e.PosSeqMag
-	if /*smpCnt > EmulatedFaultStartSamples && */ e.FaultRemainingSamples > 0 {
-		posSeqMag = posSeqMag + e.FaultPosSeqMag
-		e.FaultRemainingSamples--
+	if /*smpCnt > EmulatedFaultStartSamples && */ e.faultRemainingSamples > 0 {
+		posSeqMag = posSeqMag + e.faultPosSeqMag
+		e.faultRemainingSamples--
 	}
 
 	// positive sequence magnitude anomaly
