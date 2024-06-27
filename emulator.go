@@ -57,21 +57,21 @@ func (e *Emulator) StartEvent(eventType int) {
 		// TODO
 		// e.I.FaultPosSeqMag = EmulatedFaultCurrentMagnitude
 		// e.I.FaultRemainingSamples = MaxEmulatedFaultDurationSamples
-		e.I.FaultPhaseAMag = e.I.PosSeqMag * 1.2 // EmulatedFaultCurrentMagnitude
-		e.I.FaultRemainingSamples = MaxEmulatedFaultDurationSamples
-		e.V.FaultPhaseAMag = e.V.PosSeqMag * -0.2
-		e.V.FaultRemainingSamples = MaxEmulatedFaultDurationSamples
+		e.I.faultPhaseAMag = e.I.PosSeqMag * 1.2 // EmulatedFaultCurrentMagnitude
+		e.I.faultRemainingSamples = MaxEmulatedFaultDurationSamples
+		e.V.faultPhaseAMag = e.V.PosSeqMag * -0.2
+		e.V.faultRemainingSamples = MaxEmulatedFaultDurationSamples
 	case ThreePhaseFault:
-		e.I.FaultPosSeqMag = e.I.PosSeqMag * 1.2 // EmulatedFaultCurrentMagnitude
-		e.I.FaultRemainingSamples = MaxEmulatedFaultDurationSamples
-		e.V.FaultPosSeqMag = e.V.PosSeqMag * -0.2
-		e.V.FaultRemainingSamples = MaxEmulatedFaultDurationSamples
+		e.I.faultPosSeqMag = e.I.PosSeqMag * 1.2 // EmulatedFaultCurrentMagnitude
+		e.I.faultRemainingSamples = MaxEmulatedFaultDurationSamples
+		e.V.faultPosSeqMag = e.V.PosSeqMag * -0.2
+		e.V.faultRemainingSamples = MaxEmulatedFaultDurationSamples
 	case OverVoltage:
-		e.V.FaultPosSeqMag = e.V.PosSeqMag * 0.2
-		e.V.FaultRemainingSamples = MaxEmulatedFaultDurationSamples
+		e.V.faultPosSeqMag = e.V.PosSeqMag * 0.2
+		e.V.faultRemainingSamples = MaxEmulatedFaultDurationSamples
 	case UnderVoltage:
-		e.V.FaultPosSeqMag = e.V.PosSeqMag * -0.2
-		e.V.FaultRemainingSamples = MaxEmulatedFaultDurationSamples
+		e.V.faultPosSeqMag = e.V.PosSeqMag * -0.2
+		e.V.faultRemainingSamples = MaxEmulatedFaultDurationSamples
 	case OverFrequency:
 		e.Fdeviation = 0.1
 		e.fDeviationRemainingSamples = MaxEmulatedFrequencyDurationSamples
@@ -80,8 +80,8 @@ func (e *Emulator) StartEvent(eventType int) {
 		e.fDeviationRemainingSamples = MaxEmulatedFrequencyDurationSamples
 	case CapacitorOverCurrent:
 		// TODO
-		e.I.FaultPosSeqMag = e.I.PosSeqMag * 0.01
-		e.I.FaultRemainingSamples = MaxEmulatedCapacitorOverCurrentSamples
+		e.I.faultPosSeqMag = e.I.PosSeqMag * 0.01
+		e.I.faultRemainingSamples = MaxEmulatedCapacitorOverCurrentSamples
 	default:
 	}
 }

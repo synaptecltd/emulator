@@ -31,19 +31,17 @@ type ThreePhaseEmulation struct {
 	HarmonicsAnomaly anomaly.Container `yaml:"HarmonicsAnomaly,omitempty"` // harmonics anomalies
 
 	// event emulation
-	FaultPhaseAMag        float64 `yaml:"-"`
-	FaultPosSeqMag        float64 `yaml:"-"`
-	FaultRemainingSamples int     `yaml:"-"`
+	faultPhaseAMag        float64
+	faultPosSeqMag        float64
+	faultRemainingSamples int
 
-	// state change
-	PosSeqMagNew      float64 `yaml:"-"`
-	PosSeqMagRampRate float64 `yaml:"-"`
-
-	// internal state
-	pAngle float64 `yaml:"-"`
+	// internal state, state change
+	pAngle            float64
+	posSeqMagNew      float64
+	posSeqMagRampRate float64
 
 	// outputs
-	A, B, C float64 `yaml:"-"`
+	A, B, C float64
 }
 
 // Steps the three phase emulation forward by one time step. The new values are
@@ -62,15 +60,15 @@ func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64
 
 	PosSeqPhase := e.PhaseOffset + e.pAngle + (math.Pi * totalAnomalyDeltaPosSeqAng / 180.0)
 
-	if math.Abs(e.PosSeqMagNew-e.PosSeqMag) >= math.Abs(e.PosSeqMagRampRate) {
-		e.PosSeqMag = e.PosSeqMag + e.PosSeqMagRampRate
+	if math.Abs(e.posSeqMagNew-e.PosSeqMag) >= math.Abs(e.posSeqMagRampRate) {
+		e.PosSeqMag = e.PosSeqMag + e.posSeqMagRampRate
 	}
 
 	posSeqMag := e.PosSeqMag
 	// phaseAMag := e.PosSeqMag
-	if /*smpCnt > EmulatedFaultStartSamples && */ e.FaultRemainingSamples > 0 {
-		posSeqMag = posSeqMag + e.FaultPosSeqMag
-		e.FaultRemainingSamples--
+	if /*smpCnt > EmulatedFaultStartSamples && */ e.faultRemainingSamples > 0 {
+		posSeqMag = posSeqMag + e.faultPosSeqMag
+		e.faultRemainingSamples--
 	}
 
 	// positive sequence magnitude anomaly
