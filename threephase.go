@@ -41,7 +41,7 @@ type ThreePhaseEmulation struct {
 	posSeqMagRampRate float64
 
 	// outputs
-	A, B, C float64
+	A, B, C float64 `yaml:"-"`
 }
 
 // Steps the three phase emulation forward by one time step. The new values are
