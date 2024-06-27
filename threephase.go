@@ -12,7 +12,7 @@ const TwoPiOverThree = 2 * math.Pi / 3
 
 type ThreePhaseEmulation struct {
 	// inputs
-	PosSeqMag       float64   `yaml:"PosSeqMag"`                      // positive sequence magnitude
+	PosSeqMag       float64   `yaml:"PosSeqMag,omitempty"`            // positive sequence magnitude
 	PhaseOffset     float64   `yaml:"PhaseOffset,omitempty"`          // phase offset
 	NegSeqMag       float64   `yaml:"NegSeqMag,omitempty"`            // negative sequence magnitude
 	NegSeqAng       float64   `yaml:"NegSeqAng,omitempty"`            // negative sequence angle
@@ -24,11 +24,11 @@ type ThreePhaseEmulation struct {
 	NoiseMag        float64   `yaml:"NoiseMag,omitempty"`             // magnitude of Gaussian noise
 
 	// define anomalies
-	PosSeqMagAnomaly anomaly.Container // positive sequence magnitude anomalies
-	PosSeqAngAnomaly anomaly.Container // positive sequence angle anomalies
-	PhaseAMagAnomaly anomaly.Container // phase A magnitude anomalies
-	FreqAnomaly      anomaly.Container // frequency anomalies
-	HarmonicsAnomaly anomaly.Container // harmonics magnitude anomalies
+	PosSeqMagAnomaly anomaly.Container `yaml:"PosSeqMagAnomaly,omitempty"` // positive sequence magnitude anomalies
+	PosSeqAngAnomaly anomaly.Container `yaml:"PosSeqAngAnomaly,omitempty"` // positive sequence angle anomalies
+	PhaseAMagAnomaly anomaly.Container `yaml:"PhaseAMagAnomaly,omitempty"` // phase A magnitude anomalies
+	FreqAnomaly      anomaly.Container `yaml:"FreqAnomaly,omitempty"`      // frequency anomalies
+	HarmonicsAnomaly anomaly.Container `yaml:"HarmonicsAnomaly,omitempty"` // harmonics anomalies
 
 	// event emulation
 	FaultPhaseAMag        float64 `yaml:"-"`
