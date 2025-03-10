@@ -41,7 +41,7 @@ func GetTrendFunctionFromName(name string) (MathsFunction, error) {
 	return trendFunc, nil
 }
 
-// Returns a linear ramp y=(A/T)*t where A is the magntiude of the ramp, T is
+// Returns a linear ramp y=(A/T)*t where A is the magnitude of the ramp, T is
 // its duration, and t is elapsed time.
 func linearRamp(t, A, T float64) float64 {
 	m := A / T // slope of the ramp
