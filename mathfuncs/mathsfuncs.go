@@ -14,21 +14,20 @@ type MathsFunction func(t, A, T float64) float64
 
 // A map between string name and trendFunction pairs
 var mathsFunctions = map[string]MathsFunction{
-	"linear":              linearRamp,
-	"sine":                sineWave,
-	"cosine":              cosineWave,
-	"exponential":         exponentialRamp,
-	"exponential_reverse": exponentialRampReverse,
-	"parabolic":           parabolicRamp,
-	"step":                stepFunction,
-	"square":              squareWave,
-	"sawtooth":            sawtoothWave,
-	"impulse":             impulseTrain,
-	"impulse_varying":     impulseTrainVaryingMagnitude,
-	"random_noise":        randomNoise,
-	"gaussian_noise":      gaussianNoise,
-	"exponential_noise":   exponentialNoise,
-	"random_walk":         randomWalk,
+	"linear":            linearRamp,
+	"sine":              sineWave,
+	"cosine":            cosineWave,
+	"exponential":       exponentialRamp,
+	"parabolic":         parabolicRamp,
+	"step":              stepFunction,
+	"square":            squareWave,
+	"sawtooth":          sawtoothWave,
+	"impulse":           impulseTrain,
+	"impulse_varying":   impulseTrainVaryingMagnitude,
+	"random_noise":      randomNoise,
+	"gaussian_noise":    gaussianNoise,
+	"exponential_noise": exponentialNoise,
+	"random_walk":       randomWalk,
 }
 
 // Returns the named trend function. Defaults to linear if name is empty.
@@ -64,13 +63,6 @@ func cosineWave(t, A, T float64) float64 {
 // T is the time constant, and t is elapsed time.
 func exponentialRamp(t, A, T float64) float64 {
 	return A*math.Exp(t/T) - A
-}
-
-// Returns a decaying exponential ramp y=A*exp(-rate*t/T) where A is the amplitude,
-// T is the time constant, rate is the decay rate, and t is elapsed time.
-func exponentialRampReverse(t, A, T float64) float64 {
-	rate := 2.5
-	return A * math.Exp(-rate*t/T)
 }
 
 // Returns a parabolic ramp of amplitude A every period T.
