@@ -27,6 +27,7 @@ type ThreePhaseEmulation struct {
 	PosSeqMagAnomaly anomaly.Container `yaml:"PosSeqMagAnomaly,omitempty"` // positive sequence magnitude anomalies
 	PosSeqAngAnomaly anomaly.Container `yaml:"PosSeqAngAnomaly,omitempty"` // positive sequence angle anomalies
 	PhaseAMagAnomaly anomaly.Container `yaml:"PhaseAMagAnomaly,omitempty"` // phase A magnitude anomalies
+	PhaseAAngAnomaly anomaly.Container `yaml:"PhaseAMagAnomaly,omitempty"` // phase A magnitude anomalies
 	FreqAnomaly      anomaly.Container `yaml:"FreqAnomaly,omitempty"`      // frequency anomalies
 	HarmonicsAnomaly anomaly.Container `yaml:"HarmonicsAnomaly,omitempty"` // harmonics anomalies
 
@@ -42,6 +43,12 @@ type ThreePhaseEmulation struct {
 
 	// outputs
 	A, B, C float64 `yaml:"-"`
+	AMag    float64 `yaml:"-"`
+	BMag    float64 `yaml:"-"`
+	CMag    float64 `yaml:"-"`
+	AAng    float64 `yaml:"-"`
+	BAng    float64 `yaml:"-"`
+	CAng    float64 `yaml:"-"`
 }
 
 // Steps the three phase emulation forward by one time step. The new values are
@@ -75,11 +82,20 @@ func (e *ThreePhaseEmulation) stepThreePhase(r *rand.Rand, f float64, Ts float64
 	totalAnomalyDeltaPosSeqMag := e.PosSeqMagAnomaly.StepAll(r, Ts)
 	posSeqMag += totalAnomalyDeltaPosSeqMag
 
-	// phase A magnitude anomaly
-	anomalyPhaseA := e.PhaseAMagAnomaly.StepAll(r, Ts)
+	// phase A mag and ang anomalies
+	anomalyPhaseAMag := e.PhaseAMagAnomaly.StepAll(r, Ts)
+	anomalyPhaseAAng := e.PhaseAAngAnomaly.StepAll(r, Ts)
+
+	// simplified per-phase mag and angle calculation
+	e.AMag = posSeqMag + anomalyPhaseAMag
+	e.BMag = posSeqMag
+	e.CMag = posSeqMag
+	e.AAng = e.PhaseOffset + anomalyPhaseAAng
+	e.BAng = e.PhaseOffset - TwoPiOverThree
+	e.CAng = e.PhaseOffset + TwoPiOverThree
 
 	// positive sequence
-	a1 := fast.Sin(PosSeqPhase) * (posSeqMag + anomalyPhaseA)
+	a1 := fast.Sin(PosSeqPhase) * (posSeqMag + anomalyPhaseAMag)
 	b1 := fast.Sin(PosSeqPhase-TwoPiOverThree) * posSeqMag
 	c1 := fast.Sin(PosSeqPhase+TwoPiOverThree) * posSeqMag
 
