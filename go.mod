@@ -14,3 +14,5 @@ require (
 	github.com/stevenblair/sigourney v0.0.0-20230226010226-466bed07c980
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+retract v1.4.3

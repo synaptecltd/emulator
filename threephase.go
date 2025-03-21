@@ -27,7 +27,7 @@ type ThreePhaseEmulation struct {
 	PosSeqMagAnomaly anomaly.Container `yaml:"PosSeqMagAnomaly,omitempty"` // positive sequence magnitude anomalies
 	PosSeqAngAnomaly anomaly.Container `yaml:"PosSeqAngAnomaly,omitempty"` // positive sequence angle anomalies
 	PhaseAMagAnomaly anomaly.Container `yaml:"PhaseAMagAnomaly,omitempty"` // phase A magnitude anomalies
-	PhaseAAngAnomaly anomaly.Container `yaml:"PhaseAMagAnomaly,omitempty"` // phase A magnitude anomalies
+	PhaseAAngAnomaly anomaly.Container `yaml:"PhaseAAngAnomaly,omitempty"` // phase A magnitude anomalies
 	FreqAnomaly      anomaly.Container `yaml:"FreqAnomaly,omitempty"`      // frequency anomalies
 	HarmonicsAnomaly anomaly.Container `yaml:"HarmonicsAnomaly,omitempty"` // harmonics anomalies
 
