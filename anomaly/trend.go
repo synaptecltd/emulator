@@ -36,7 +36,7 @@ type TrendParams struct {
 }
 
 // Initialise the internal fields of TrendAnomaly when it is unmarshalled from yaml.
-func (t *trendAnomaly) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (t *trendAnomaly) UnmarshalYAML(unmarshal func(any) error) error {
 	var params TrendParams
 	if err := unmarshal(&params); err != nil {
 		return err

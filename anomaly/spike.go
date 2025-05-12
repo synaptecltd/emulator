@@ -48,7 +48,7 @@ type SpikeParams struct {
 }
 
 // Initialise the internal fields of SpikeAnomaly when it is unmarshalled from yaml.
-func (s *spikeAnomaly) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (s *spikeAnomaly) UnmarshalYAML(unmarshal func(any) error) error {
 	var params SpikeParams
 	if err := unmarshal(&params); err != nil {
 		return err

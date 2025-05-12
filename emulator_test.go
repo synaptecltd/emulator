@@ -14,8 +14,8 @@ var anomalyKey = "test"
 func BenchmarkEmulator(b *testing.B) {
 	emu := createEmulator(4000, 0)
 
-	for i := 0; i < b.N; i++ {
-		for j := 0; j < 4000; j++ {
+	for b.Loop() {
+		for range 4000 {
 			emu.Step()
 		}
 	}

@@ -141,13 +141,9 @@ var randomWalk = func() func(float64, float64, float64) float64 {
 			proposedValue := previousValue + step
 
 			// Hold the value within the bounds of +/- A
-			if proposedValue > A {
-				previousValue = A
-			} else if proposedValue < -A {
-				previousValue = -A
-			} else {
-				previousValue = proposedValue
-			}
+			previousValue = math.Min(
+				math.Max(proposedValue, -A),
+				A)
 		}
 		return previousValue
 	}
