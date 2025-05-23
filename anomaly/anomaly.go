@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/synaptecltd/emulator/mathfuncs"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // Container is a collection of anomalies.
@@ -14,7 +14,7 @@ type Container map[string]AnomalyInterface
 
 // AnomalyInterface is the interface for all anomaly Types (trends, instantaneous, etc).
 type AnomalyInterface interface {
-	UnmarshalYAML(unmarshal func(interface{}) error) error // Unmarshals an anomaly entry into the correct type based on the type field
+	UnmarshalYAML(unmarshal func(any) error) error // Unmarshals an anomaly entry into the correct type based on the type field
 
 	// Inherited from AnomalyBase
 	GetTypeAsString() string          // Returns the type of anomaly as a string
@@ -45,13 +45,13 @@ func AsSpikeAnomaly(a AnomalyInterface) (*spikeAnomaly, bool) {
 }
 
 // Unmarshals a generic anomaly entry into the correct type base on the anomaly "Type" field.
-func (c *Container) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (c *Container) UnmarshalYAML(unmarshal func(any) error) error {
 	// Create the container if passed an empty pointer
 	if *c == nil {
 		*c = make(Container)
 	}
 
-	var raw map[string]map[string]interface{}
+	var raw map[string]map[string]any
 	if err := unmarshal(&raw); err != nil {
 		return err
 	}

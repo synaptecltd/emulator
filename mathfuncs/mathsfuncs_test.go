@@ -228,7 +228,7 @@ func TestNoiseFunctions(t *testing.T) {
 
 			var sum, sumSq float64
 			var prevValue float64
-			for i := 0; i < tc.numSamples; i++ {
+			for i := range tc.numSamples {
 				x := testFunction(float64(i), A, 0)
 				if tc.checkBounds {
 					assert.True(t, x >= tc.lowerBound && x <= tc.upperBound, "value out of bounds")
@@ -251,5 +251,55 @@ func TestNoiseFunctions(t *testing.T) {
 				assert.InDelta(t, tc.expectedStdDev, stddev, allowedDelta)
 			}
 		})
+	}
+}
+
+var randomWalkOld = func() func(float64, float64, float64) float64 {
+	stepFactor := 20.0
+	var previousValue float64 = 0
+	return func(t, A, T float64) float64 {
+		if t != 0 {
+			step := A / stepFactor * (rand.Float64()*2 - 1)
+			proposedValue := previousValue + step
+
+			// Hold the value within the bounds of +/- A
+			if proposedValue > A {
+				previousValue = A
+			} else if proposedValue < -A {
+				previousValue = -A
+			} else {
+				previousValue = proposedValue
+			}
+		}
+		return previousValue
+	}
+}()
+
+var randomWalkNew = func() func(float64, float64, float64) float64 {
+	stepFactor := 20.0
+	var previousValue float64 = 0
+	return func(t, A, T float64) float64 {
+		if t != 0 {
+			step := A / stepFactor * (rand.Float64()*2 - 1)
+			proposedValue := previousValue + step
+
+			// Hold the value within the bounds of +/- A
+			previousValue = math.Min(math.Max(proposedValue, -A), A)
+		}
+		return previousValue
+	}
+}()
+
+// BenchmarkRandomWalkOld-16       673991493                1.765 ns/op           0 B/op          0 allocs/op
+func BenchmarkRandomWalkOld(b *testing.B) {
+	for b.Loop() {
+		randomWalkOld(0, 1, 1)
+	}
+}
+
+// BenchmarkRandomWalkNew-16       680590620                1.769 ns/op           0 B/op          0 allocs/op
+func BenchmarkRandomWalkNew(b *testing.B) {
+	for b.Loop() {
+		randomWalkNew(0, 1, 1)
 	}
 }
