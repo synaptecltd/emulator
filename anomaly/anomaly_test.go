@@ -5,9 +5,9 @@ import (
 	"math/rand/v2"
 	"testing"
 
+	"github.com/goccy/go-yaml"
 	"github.com/stretchr/testify/assert"
 	"github.com/synaptecltd/emulator/anomaly"
-	"gopkg.in/yaml.v3"
 )
 
 // Test anomalies can be unmarshalled from yaml
@@ -27,7 +27,7 @@ inst1:
 `,
 		startDelay, duration, probability)
 
-	container := make(anomaly.Container)
+	container := make(anomaly.Container, 0)
 	err := yaml.Unmarshal([]byte(yamlStr), &container)
 	assert.NoError(t, err)
 

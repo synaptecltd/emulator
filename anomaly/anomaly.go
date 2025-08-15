@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"math/rand/v2"
 
-	"github.com/google/uuid"
+	"github.com/goccy/go-yaml"
 	"github.com/synaptecltd/emulator/mathfuncs"
-	"gopkg.in/yaml.v3"
 )
 
 // Container is a collection of anomalies.
-type Container map[string]AnomalyInterface
+type Container []AnomalyInterface
 
 // AnomalyInterface is the interface for all anomaly Types (trends, instantaneous, etc).
 type AnomalyInterface interface {
@@ -48,13 +47,15 @@ func AsSpikeAnomaly(a AnomalyInterface) (*spikeAnomaly, bool) {
 func (c *Container) UnmarshalYAML(unmarshal func(any) error) error {
 	// Create the container if passed an empty pointer
 	if *c == nil {
-		*c = make(Container)
+		*c = make(Container, 0)
 	}
 
-	var raw map[string]map[string]any
+	var raw map[string]any
 	if err := unmarshal(&raw); err != nil {
 		return err
 	}
+	var anomaly AnomalyInterface
+
 	// Match on the definition of the anomaly type
 	for key, value := range raw {
 		var anomaly AnomalyInterface
@@ -77,8 +78,6 @@ func (c *Container) UnmarshalYAML(unmarshal func(any) error) error {
 		if err := yaml.Unmarshal(valueYAML, anomaly); err != nil {
 			return err
 		}
-
-		(*c)[key] = anomaly
 	}
 
 	return nil
@@ -95,8 +94,6 @@ func (c Container) StepAll(r *rand.Rand, Ts float64) float64 {
 }
 
 // Add anomaly to container with a UUID and returns the UUID.
-func (c *Container) AddAnomaly(anomaly AnomalyInterface) uuid.UUID {
-	uuid := uuid.New()
-	(*c)[uuid.String()] = anomaly
-	return uuid
+func (c *Container) AddAnomaly(anomaly AnomalyInterface) {
+	*c = append(*c, anomaly)
 }
