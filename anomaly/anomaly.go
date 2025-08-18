@@ -50,26 +50,27 @@ func (c *Container) UnmarshalYAML(unmarshal func(any) error) error {
 		*c = make(Container, 0)
 	}
 
-	var raw map[string]any
+	var raw []map[string]any
 	if err := unmarshal(&raw); err != nil {
 		return err
 	}
+
 	var anomaly AnomalyInterface
 
 	// Match on the definition of the anomaly type
-	for key, value := range raw {
-		var anomaly AnomalyInterface
-		switch value["Type"].(string) {
-		case "spike":
-			anomaly = &spikeAnomaly{}
-		case "trend":
-			anomaly = &trendAnomaly{}
-		default:
-			return fmt.Errorf("unknown anomaly type: %s", value["Type"].(string))
+	for _, anomalyEntry := range raw {
+		if anomalyEntry["Type"] != nil {
+			switch anomalyEntry["Type"] {
+			case "spike":
+				anomaly = &spikeAnomaly{}
+			case "trend":
+				anomaly = &trendAnomaly{}
+			default:
+				return fmt.Errorf("unknown anomaly type: %s", anomalyEntry["Type"])
+			}
 		}
-
 		// Convert the value map into YAML for unmarshalling into an anomaly
-		valueYAML, err := yaml.Marshal(value)
+		valueYAML, err := yaml.Marshal(anomalyEntry)
 		if err != nil {
 			return err
 		}
@@ -79,7 +80,6 @@ func (c *Container) UnmarshalYAML(unmarshal func(any) error) error {
 			return err
 		}
 	}
-
 	return nil
 }
 
