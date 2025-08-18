@@ -100,7 +100,7 @@ func NewSpikeAnomaly(params SpikeParams) (*spikeAnomaly, error) {
 	return spikeAnomaly, nil
 }
 
-// Returns the change in signal caused by the instantaneous anomaly this timestep.
+// stepAnomaly returns the change in signal caused by the instantaneous anomaly this timestep.
 func (s *spikeAnomaly) stepAnomaly(r *rand.Rand, Ts float64) float64 {
 	if s.Off {
 		return 0.0

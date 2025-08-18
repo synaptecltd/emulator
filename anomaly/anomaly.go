@@ -79,6 +79,8 @@ func (c *Container) UnmarshalYAML(unmarshal func(any) error) error {
 		if err := yaml.Unmarshal(valueYAML, anomaly); err != nil {
 			return err
 		}
+
+		c.AddAnomaly(anomaly)
 	}
 	return nil
 }

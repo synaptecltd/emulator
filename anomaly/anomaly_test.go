@@ -55,6 +55,16 @@ func TestUnmarshalYAML(t *testing.T) {
 	}
 }
 
+func TestUnmarshalYAMLUnknownType(t *testing.T) {
+	yamlStr := `
+- Type: NotARealType
+  SomeField: 1.0
+`
+	var container anomaly.Container
+	err := yaml.Unmarshal([]byte(yamlStr), &container)
+	assert.Error(t, err)
+}
+
 // Get type of anomaly as string
 func TestGetTypeAsString(t *testing.T) {
 	instAnomaly, _ := anomaly.NewSpikeAnomaly(anomaly.SpikeParams{})

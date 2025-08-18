@@ -79,7 +79,7 @@ func NewTrendAnomaly(params TrendParams) (*trendAnomaly, error) {
 	return trendAnomaly, nil
 }
 
-// Returns the change in signal caused by the trend anomaly this timestep.
+// stepAnomaly returns the change in signal caused by the trend anomaly this timestep.
 // Manages internal indices to track the progress of trend cycles, and delays between trend cycles.
 // Ts is the sampling period of the data.
 func (t *trendAnomaly) stepAnomaly(_ *rand.Rand, Ts float64) float64 {
