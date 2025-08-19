@@ -113,11 +113,21 @@ func (c *Container) AddAnomaly(anomaly AnomalyInterface) error {
 }
 
 // GetAnomalyByName returns the first anomaly in the container with the specified name, or nil if not found.
-func (c Container) GetAnomalyByName(name string) AnomalyInterface {
+func (c Container) GetAnomalyByName(name string) *AnomalyInterface {
 	for _, anomaly := range c {
 		if anomaly.GetName() == name {
-			return anomaly
+			return &anomaly
 		}
 	}
 	return nil
+}
+
+func (c Container) UpdateAnomalyByName(name string, newAnomaly AnomalyInterface) error {
+	for i, anomaly := range c {
+		if anomaly.GetName() == name && anomaly.GetTypeAsString() == newAnomaly.GetTypeAsString() {
+			c[i] = newAnomaly
+			return nil
+		}
+	}
+	return fmt.Errorf("anomaly with name %s and type %s not found", name, newAnomaly.GetTypeAsString())
 }

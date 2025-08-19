@@ -79,7 +79,7 @@ func TestUnmarshalYAMLDuplicateName(t *testing.T) {
 `
 	var container anomaly.Container
 	err := yaml.Unmarshal([]byte(yamlStr), &container)
-	assert.Error(t, err)
+	assert.ErrorContains(t, err, "already exists")
 }
 
 // Get type of anomaly as string
@@ -117,4 +117,75 @@ func TestAsSpikeAnomaly(t *testing.T) {
 	result, ok = anomaly.AsSpikeAnomaly(spikeAnomaly)
 	assert.True(t, ok)
 	assert.NotNil(t, result)
+}
+
+// Test updating anomaly by name
+func TestUpdateAnomalyByName(t *testing.T) {
+	container := anomaly.Container{}
+
+	// Add initial anomalies
+	trendAnomaly, _ := anomaly.NewTrendAnomaly(anomaly.TrendParams{
+		StartDelay: 1.0,
+		Duration:   2.0,
+		Name:       "TestTrend",
+	})
+
+	spikeAnomaly, _ := anomaly.NewSpikeAnomaly(anomaly.SpikeParams{
+		Probability: 0.5,
+		Name:        "TestSpike",
+	})
+
+	container.AddAnomaly(trendAnomaly)
+	container.AddAnomaly(spikeAnomaly)
+
+	// Update trend anomaly with new parameters
+	newTrendAnomaly, _ := anomaly.NewTrendAnomaly(anomaly.TrendParams{
+		StartDelay: 5.0,
+		Duration:   10.0,
+		Name:       "TestTrend",
+	})
+
+	err := container.UpdateAnomalyByName("TestTrend", newTrendAnomaly)
+	assert.NoError(t, err)
+
+	// Verify the anomaly was updated
+	updatedAnomaly := container.GetAnomalyByName("TestTrend")
+	assert.NotNil(t, updatedAnomaly)
+	assert.InDelta(t, 5.0, (*updatedAnomaly).GetStartDelay(), 1e-6)
+	assert.InDelta(t, 10.0, (*updatedAnomaly).GetDuration(), 1e-6)
+}
+
+func TestUpdateAnomalyByNameNotFound(t *testing.T) {
+	container := anomaly.Container{}
+
+	// Add an anomaly
+	trendAnomaly, _ := anomaly.NewTrendAnomaly(anomaly.TrendParams{Name: "ExistingAnomaly"})
+	container.AddAnomaly(trendAnomaly)
+
+	// Try to update non-existent anomaly
+	newAnomaly, _ := anomaly.NewSpikeAnomaly(anomaly.SpikeParams{})
+	err := container.UpdateAnomalyByName("NonExistentAnomaly", newAnomaly)
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "not found")
+}
+
+func TestUpdateAnomalyByNameChangeType(t *testing.T) {
+	container := anomaly.Container{}
+
+	// Add a trend anomaly
+	trendAnomaly, _ := anomaly.NewTrendAnomaly(anomaly.TrendParams{
+		StartDelay: 1.0,
+		Duration:   2.0,
+		Name:       "TestAnomaly",
+	})
+	container.AddAnomaly(trendAnomaly)
+
+	// Update with a spike anomaly (different type)
+	spikeAnomaly, _ := anomaly.NewSpikeAnomaly(anomaly.SpikeParams{
+		Probability: 0.8,
+		Name:        "TestAnomaly",
+	})
+
+	err := container.UpdateAnomalyByName("TestAnomaly", spikeAnomaly)
+	assert.Error(t, err)
 }
