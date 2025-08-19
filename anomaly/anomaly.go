@@ -1,6 +1,7 @@
 package anomaly
 
 import (
+	"errors"
 	"fmt"
 	"math/rand/v2"
 
@@ -16,6 +17,7 @@ type AnomalyInterface interface {
 	UnmarshalYAML(unmarshal func(any) error) error // Unmarshals an anomaly entry into the correct type based on the type field
 
 	// Inherited from AnomalyBase
+	GetName() string                  // Returns the name of the anomaly, used for identification
 	GetTypeAsString() string          // Returns the type of anomaly as a string
 	GetStartDelay() float64           // Returns the start time of anomalies in seconds
 	GetDuration() float64             // Returns the duration of each anomaly in seconds
@@ -51,7 +53,8 @@ func (c *Container) UnmarshalYAML(unmarshal func(any) error) error {
 	}
 
 	var raw []map[string]any
-	if err := unmarshal(&raw); err != nil {
+	err := unmarshal(&raw)
+	if err != nil {
 		return err
 	}
 
@@ -76,11 +79,15 @@ func (c *Container) UnmarshalYAML(unmarshal func(any) error) error {
 		}
 
 		// Unmarshal the YAML into the anomaly
-		if err := yaml.Unmarshal(valueYAML, anomaly); err != nil {
+		err = yaml.Unmarshal(valueYAML, anomaly)
+		if err != nil {
 			return err
 		}
 
-		c.AddAnomaly(anomaly)
+		err = c.AddAnomaly(anomaly)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -88,14 +95,29 @@ func (c *Container) UnmarshalYAML(unmarshal func(any) error) error {
 // Steps all anomalies within a container and returns the sum of their effects.
 func (c Container) StepAll(r *rand.Rand, Ts float64) float64 {
 	value := 0.0
-	for key := range c {
+	for i := range c {
 		// Do by index to not work on copy
-		value += c[key].stepAnomaly(r, Ts)
+		value += c[i].stepAnomaly(r, Ts)
 	}
 	return value
 }
 
-// Add anomaly to container with a UUID and returns the UUID.
-func (c *Container) AddAnomaly(anomaly AnomalyInterface) {
+// Add anomaly to container.
+func (c *Container) AddAnomaly(anomaly AnomalyInterface) error {
+	// Check that the name hasn't already been used
+	if c.GetAnomalyByName(anomaly.GetName()) != nil {
+		return errors.New("anomaly with name " + anomaly.GetName() + " already exists")
+	}
 	*c = append(*c, anomaly)
+	return nil
+}
+
+// GetAnomalyByName returns the first anomaly in the container with the specified name, or nil if not found.
+func (c Container) GetAnomalyByName(name string) AnomalyInterface {
+	for _, anomaly := range c {
+		if anomaly.GetName() == name {
+			return anomaly
+		}
+	}
+	return nil
 }

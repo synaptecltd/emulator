@@ -20,8 +20,10 @@ func TestUnmarshalYAML(t *testing.T) {
 - Type: trend
   StartDelay: %f
   Duration: %f
+  Name: Trend Anomaly
 - Type: spike
   Probability: %f
+  Name: Spike Anomaly
 `,
 		startDelay, duration, probability)
 
@@ -59,6 +61,21 @@ func TestUnmarshalYAMLUnknownType(t *testing.T) {
 	yamlStr := `
 - Type: NotARealType
   SomeField: 1.0
+`
+	var container anomaly.Container
+	err := yaml.Unmarshal([]byte(yamlStr), &container)
+	assert.Error(t, err)
+}
+
+func TestUnmarshalYAMLDuplicateName(t *testing.T) {
+	yamlStr := `
+- Type: trend
+  StartDelay: 1.0
+  Duration: 2.0
+  Name: Trend Anomaly
+- Type: spike
+  Probability: 0.5
+  Name: Trend Anomaly
 `
 	var container anomaly.Container
 	err := yaml.Unmarshal([]byte(yamlStr), &container)

@@ -10,6 +10,7 @@ import (
 type AnomalyBase struct {
 	Repeats uint64 // the number of times the anomalies repeat, 0 for infinite
 	Off     bool   // true: anomaly deactivated, false: activated
+	name    string // name of the anomaly, used for identification
 
 	// Setters with error checking should be provided for private fields below
 	typeName   string  // the type of anomaly as a string, e.g. "trend", "spike".
@@ -22,6 +23,10 @@ type AnomalyBase struct {
 	elapsedActivatedIndex int     // number of time steps since start of this active anomaly repeat, used to track the progress within an anomaly burst/trend
 	elapsedActivatedTime  float64 // time elapsed since the start of this active anomaly repeat
 	countRepeats          uint64  // counter for number of times the anomaly trend/burst has repeated
+}
+
+func (a *AnomalyBase) GetName() string {
+	return a.name
 }
 
 // Returns the type of anomaly as a string.
