@@ -23,6 +23,7 @@ type trendAnomaly struct {
 type TrendParams struct {
 	// Defined in AnomalyBase
 
+	Name       string  `yaml:"Name"`       // name of the anomaly, used for identification
 	Repeats    uint64  `yaml:"Repeats"`    // the number of times the trend anomaly repeats, 0 for infinite
 	Off        bool    `yaml:"Off"`        // true: anomaly deactivated, false: activated
 	StartDelay float64 `yaml:"StartDelay"` // the delay before trend anomalies begin (and between anomaly repeats) in seconds
@@ -58,6 +59,8 @@ func (t *trendAnomaly) UnmarshalYAML(unmarshal func(any) error) error {
 func NewTrendAnomaly(params TrendParams) (*trendAnomaly, error) {
 	trendAnomaly := &trendAnomaly{}
 
+	trendAnomaly.name = params.Name
+
 	// Invalid values checked by setters
 	if err := trendAnomaly.SetDuration(params.Duration); err != nil {
 		return nil, err
@@ -79,7 +82,7 @@ func NewTrendAnomaly(params TrendParams) (*trendAnomaly, error) {
 	return trendAnomaly, nil
 }
 
-// Returns the change in signal caused by the trend anomaly this timestep.
+// stepAnomaly returns the change in signal caused by the trend anomaly this timestep.
 // Manages internal indices to track the progress of trend cycles, and delays between trend cycles.
 // Ts is the sampling period of the data.
 func (t *trendAnomaly) stepAnomaly(_ *rand.Rand, Ts float64) float64 {

@@ -19,6 +19,7 @@ phaseOffsetDeg := 0.0
 // define some anomalies
 // spikes of magnitude +/- 30.0, triggering with probability 1% at each time step
 spikes, _ := anomaly.NewSpikeAnomaly(anomaly.SpikeParams{
+    Name:        "1pSpikes"
     Probability: 0.01,
     Magnitude:   30.0,
 })
@@ -26,6 +27,7 @@ spikes, _ := anomaly.NewSpikeAnomaly(anomaly.SpikeParams{
 // a repeating linear ramp
 ramp, _ := anomaly.NewTrendAnomaly(
     anomaly.TrendParams{
+        Name: "RepeatingLinear"
         Magnitude:   5, // ramp magnitude
         Duration:    0.7, // ramp duration, seconds
         MagFuncName: "linear",
@@ -51,17 +53,17 @@ emu.I = &emulator.ThreePhaseEmulation{
     HarmonicAngs:    []float64{171.5, 100.4, -52.4, 128.3, 80.0, 2.9, -146.8, 133.9},
     NoiseMag:        0.000001,
     PhaseAMagAnomaly: anomaly.Container{
-        "events": spikes,
+        spikes,
     },
 }
 
 // Create an anomaly container for temperature and add anomalies
 container := anomaly.Container{}
 spikes.Magnitude = 1.0 // re-use an anomaly with reduced magnitude
-_ = container.AddAnomaly(spikes) // returns uuid of anomaly
-_ = container.AddAnomaly(ramp)
+err := container.AddAnomaly(spikes)
+err := container.AddAnomaly(ramp)
 
-// Specify tempertaure parameters
+// Specify temperature parameters
 emu.T = &emulator.TemperatureEmulation{
     MeanTemperature: 30.0,
     NoiseMag:        0.01,
@@ -92,12 +94,12 @@ where `foo.yml` is e.g.:
 MeanTemperature: 20.0
 NoiseMag: 0.1
 Anomaly:
-  repeating_ramp:   # anomaly name
-    Type: trend     # type of anomaly: trend
-    Magnitude: 5    # params
+  - Name: repeating_ramp # anomaly name
+    Type: trend # type of anomaly: trend
+    Magnitude: 5 # params
     Duration: 0.7
-  blips:            # anomaly name
-    Type: spike     # type of anomaly: spike
+  - Name: blips # anomaly name
+    Type: spike # type of anomaly: spike
     Probability: 0.01
     Magnitude: 2
   # etc
@@ -106,6 +108,7 @@ Anomaly:
 ## Anomalies
 
 Two types of anomaly can be added to the data to create interesting scenarios:
+
 1. Spike: actuate an instantaneous change of given magnitude to the selected parameter with a probability factor
 2. Trend: apply continuous changes to the parameter
 

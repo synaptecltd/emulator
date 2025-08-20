@@ -1,22 +1,23 @@
 package anomaly
 
 import (
+	"errors"
 	"fmt"
 	"math/rand/v2"
 
-	"github.com/google/uuid"
+	"github.com/goccy/go-yaml"
 	"github.com/synaptecltd/emulator/mathfuncs"
-	"gopkg.in/yaml.v3"
 )
 
 // Container is a collection of anomalies.
-type Container map[string]AnomalyInterface
+type Container []AnomalyInterface
 
 // AnomalyInterface is the interface for all anomaly Types (trends, instantaneous, etc).
 type AnomalyInterface interface {
 	UnmarshalYAML(unmarshal func(any) error) error // Unmarshals an anomaly entry into the correct type based on the type field
 
 	// Inherited from AnomalyBase
+	GetName() string                  // Returns the name of the anomaly, used for identification
 	GetTypeAsString() string          // Returns the type of anomaly as a string
 	GetStartDelay() float64           // Returns the start time of anomalies in seconds
 	GetDuration() float64             // Returns the duration of each anomaly in seconds
@@ -48,55 +49,85 @@ func AsSpikeAnomaly(a AnomalyInterface) (*spikeAnomaly, bool) {
 func (c *Container) UnmarshalYAML(unmarshal func(any) error) error {
 	// Create the container if passed an empty pointer
 	if *c == nil {
-		*c = make(Container)
+		*c = make(Container, 0)
 	}
 
-	var raw map[string]map[string]any
-	if err := unmarshal(&raw); err != nil {
+	var raw []map[string]any
+	err := unmarshal(&raw)
+	if err != nil {
 		return err
 	}
-	// Match on the definition of the anomaly type
-	for key, value := range raw {
-		var anomaly AnomalyInterface
-		switch value["Type"].(string) {
-		case "spike":
-			anomaly = &spikeAnomaly{}
-		case "trend":
-			anomaly = &trendAnomaly{}
-		default:
-			return fmt.Errorf("unknown anomaly type: %s", value["Type"].(string))
-		}
 
+	var anomaly AnomalyInterface
+
+	// Match on the definition of the anomaly type
+	for _, anomalyEntry := range raw {
+		if anomalyEntry["Type"] != nil {
+			switch anomalyEntry["Type"] {
+			case "spike":
+				anomaly = &spikeAnomaly{}
+			case "trend":
+				anomaly = &trendAnomaly{}
+			default:
+				return fmt.Errorf("unknown anomaly type: %s", anomalyEntry["Type"])
+			}
+		}
 		// Convert the value map into YAML for unmarshalling into an anomaly
-		valueYAML, err := yaml.Marshal(value)
+		valueYAML, err := yaml.Marshal(anomalyEntry)
 		if err != nil {
 			return err
 		}
 
 		// Unmarshal the YAML into the anomaly
-		if err := yaml.Unmarshal(valueYAML, anomaly); err != nil {
+		err = yaml.Unmarshal(valueYAML, anomaly)
+		if err != nil {
 			return err
 		}
 
-		(*c)[key] = anomaly
+		err = c.AddAnomaly(anomaly)
+		if err != nil {
+			return err
+		}
 	}
-
 	return nil
 }
 
 // Steps all anomalies within a container and returns the sum of their effects.
 func (c Container) StepAll(r *rand.Rand, Ts float64) float64 {
 	value := 0.0
-	for key := range c {
+	for i := range c {
 		// Do by index to not work on copy
-		value += c[key].stepAnomaly(r, Ts)
+		value += c[i].stepAnomaly(r, Ts)
 	}
 	return value
 }
 
-// Add anomaly to container with a UUID and returns the UUID.
-func (c *Container) AddAnomaly(anomaly AnomalyInterface) uuid.UUID {
-	uuid := uuid.New()
-	(*c)[uuid.String()] = anomaly
-	return uuid
+// Add anomaly to container.
+func (c *Container) AddAnomaly(anomaly AnomalyInterface) error {
+	// Check that the name hasn't already been used
+	if c.GetAnomalyByName(anomaly.GetName()) != nil {
+		return errors.New("anomaly with name " + anomaly.GetName() + " already exists")
+	}
+	*c = append(*c, anomaly)
+	return nil
+}
+
+// GetAnomalyByName returns the first anomaly in the container with the specified name, or nil if not found.
+func (c Container) GetAnomalyByName(name string) *AnomalyInterface {
+	for _, anomaly := range c {
+		if anomaly.GetName() == name {
+			return &anomaly
+		}
+	}
+	return nil
+}
+
+func (c Container) UpdateAnomalyByName(name string, newAnomaly AnomalyInterface) error {
+	for i, anomaly := range c {
+		if anomaly.GetName() == name && anomaly.GetTypeAsString() == newAnomaly.GetTypeAsString() {
+			c[i] = newAnomaly
+			return nil
+		}
+	}
+	return fmt.Errorf("anomaly with name %s and type %s not found", name, newAnomaly.GetTypeAsString())
 }

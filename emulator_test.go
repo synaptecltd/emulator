@@ -67,7 +67,7 @@ func TestTemperatureEmulationAnomalies_NoAnomalies(t *testing.T) {
 		MeanTemperature: 30.0,
 		NoiseMag:        0.01,
 		Anomaly: anomaly.Container{
-			anomalyKey: spikeAnomaly,
+			spikeAnomaly,
 		},
 	}
 
@@ -75,7 +75,7 @@ func TestTemperatureEmulationAnomalies_NoAnomalies(t *testing.T) {
 	var results []bool
 	for step < 1e4 {
 		emulator.Step()
-		results = append(results, emulator.T.Anomaly[anomalyKey].GetIsAnomalyActive())
+		results = append(results, emulator.T.Anomaly[0].GetIsAnomalyActive())
 		step += 1
 	}
 	assert.NotContains(t, results, true)
@@ -99,7 +99,7 @@ func TestTemperatureEmulationAnomalies_Anomalies(t *testing.T) {
 		MeanTemperature: 30.0,
 		NoiseMag:        0.01,
 		Anomaly: anomaly.Container{
-			anomalyKey: spikeAnomaly,
+			spikeAnomaly,
 		},
 	}
 
@@ -109,9 +109,9 @@ func TestTemperatureEmulationAnomalies_Anomalies(t *testing.T) {
 	var anomalyValues []float64
 	for step < 1e4 {
 		emulator.Step()
-		results = append(results, emulator.T.Anomaly[anomalyKey].GetIsAnomalyActive())
+		results = append(results, emulator.T.Anomaly[0].GetIsAnomalyActive())
 
-		if emulator.T.Anomaly[anomalyKey].GetIsAnomalyActive() == true {
+		if emulator.T.Anomaly[0].GetIsAnomalyActive() == true {
 			anomalyValues = append(anomalyValues, emulator.T.T)
 		} else {
 			normalValues = append(normalValues, emulator.T.T)
@@ -142,7 +142,7 @@ func TestTemperatureEmulationAnomalies_RisingTrend(t *testing.T) {
 		MeanTemperature: 30.0,
 		NoiseMag:        0.01,
 		Anomaly: anomaly.Container{
-			anomalyKey: trendAnomaly,
+			trendAnomaly,
 		},
 	}
 
@@ -176,7 +176,7 @@ func TestTemperatureEmulationAnomalies_DecreasingTrend(t *testing.T) {
 		MeanTemperature: 30.0,
 		NoiseMag:        0.01,
 		Anomaly: anomaly.Container{
-			anomalyKey: trendAnomaly,
+			trendAnomaly,
 		},
 	}
 
@@ -207,7 +207,7 @@ func TestCurrentPosSeqAnomalies_RisingTrend(t *testing.T) {
 		PosSeqMag:   350.0,
 		PhaseOffset: 0.0,
 		PosSeqMagAnomaly: anomaly.Container{
-			anomalyKey: trendAnomaly,
+			trendAnomaly,
 		},
 	}
 

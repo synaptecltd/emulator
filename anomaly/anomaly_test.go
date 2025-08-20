@@ -5,9 +5,9 @@ import (
 	"math/rand/v2"
 	"testing"
 
+	"github.com/goccy/go-yaml"
 	"github.com/stretchr/testify/assert"
 	"github.com/synaptecltd/emulator/anomaly"
-	"gopkg.in/yaml.v3"
 )
 
 // Test anomalies can be unmarshalled from yaml
@@ -17,17 +17,17 @@ func TestUnmarshalYAML(t *testing.T) {
 	probability := rand.Float64()
 
 	yamlStr := fmt.Sprintf(`
-trend1:
-  Type: trend
+- Type: trend
   StartDelay: %f
   Duration: %f
-inst1:
-  Type: spike
+  Name: Trend Anomaly
+- Type: spike
   Probability: %f
+  Name: Spike Anomaly
 `,
 		startDelay, duration, probability)
 
-	container := make(anomaly.Container)
+	var container anomaly.Container
 	err := yaml.Unmarshal([]byte(yamlStr), &container)
 	assert.NoError(t, err)
 
@@ -55,6 +55,31 @@ inst1:
 		assert.InDelta(t, expected.GetStartDelay(), anom.GetStartDelay(), 1e-6)
 
 	}
+}
+
+func TestUnmarshalYAMLUnknownType(t *testing.T) {
+	yamlStr := `
+- Type: NotARealType
+  SomeField: 1.0
+`
+	var container anomaly.Container
+	err := yaml.Unmarshal([]byte(yamlStr), &container)
+	assert.Error(t, err)
+}
+
+func TestUnmarshalYAMLDuplicateName(t *testing.T) {
+	yamlStr := `
+- Type: trend
+  StartDelay: 1.0
+  Duration: 2.0
+  Name: Trend Anomaly
+- Type: spike
+  Probability: 0.5
+  Name: Trend Anomaly
+`
+	var container anomaly.Container
+	err := yaml.Unmarshal([]byte(yamlStr), &container)
+	assert.ErrorContains(t, err, "already exists")
 }
 
 // Get type of anomaly as string
@@ -92,4 +117,75 @@ func TestAsSpikeAnomaly(t *testing.T) {
 	result, ok = anomaly.AsSpikeAnomaly(spikeAnomaly)
 	assert.True(t, ok)
 	assert.NotNil(t, result)
+}
+
+// Test updating anomaly by name
+func TestUpdateAnomalyByName(t *testing.T) {
+	container := anomaly.Container{}
+
+	// Add initial anomalies
+	trendAnomaly, _ := anomaly.NewTrendAnomaly(anomaly.TrendParams{
+		StartDelay: 1.0,
+		Duration:   2.0,
+		Name:       "TestTrend",
+	})
+
+	spikeAnomaly, _ := anomaly.NewSpikeAnomaly(anomaly.SpikeParams{
+		Probability: 0.5,
+		Name:        "TestSpike",
+	})
+
+	container.AddAnomaly(trendAnomaly)
+	container.AddAnomaly(spikeAnomaly)
+
+	// Update trend anomaly with new parameters
+	newTrendAnomaly, _ := anomaly.NewTrendAnomaly(anomaly.TrendParams{
+		StartDelay: 5.0,
+		Duration:   10.0,
+		Name:       "TestTrend",
+	})
+
+	err := container.UpdateAnomalyByName("TestTrend", newTrendAnomaly)
+	assert.NoError(t, err)
+
+	// Verify the anomaly was updated
+	updatedAnomaly := container.GetAnomalyByName("TestTrend")
+	assert.NotNil(t, updatedAnomaly)
+	assert.InDelta(t, 5.0, (*updatedAnomaly).GetStartDelay(), 1e-6)
+	assert.InDelta(t, 10.0, (*updatedAnomaly).GetDuration(), 1e-6)
+}
+
+func TestUpdateAnomalyByNameNotFound(t *testing.T) {
+	container := anomaly.Container{}
+
+	// Add an anomaly
+	trendAnomaly, _ := anomaly.NewTrendAnomaly(anomaly.TrendParams{Name: "ExistingAnomaly"})
+	container.AddAnomaly(trendAnomaly)
+
+	// Try to update non-existent anomaly
+	newAnomaly, _ := anomaly.NewSpikeAnomaly(anomaly.SpikeParams{})
+	err := container.UpdateAnomalyByName("NonExistentAnomaly", newAnomaly)
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "not found")
+}
+
+func TestUpdateAnomalyByNameChangeType(t *testing.T) {
+	container := anomaly.Container{}
+
+	// Add a trend anomaly
+	trendAnomaly, _ := anomaly.NewTrendAnomaly(anomaly.TrendParams{
+		StartDelay: 1.0,
+		Duration:   2.0,
+		Name:       "TestAnomaly",
+	})
+	container.AddAnomaly(trendAnomaly)
+
+	// Update with a spike anomaly (different type)
+	spikeAnomaly, _ := anomaly.NewSpikeAnomaly(anomaly.SpikeParams{
+		Probability: 0.8,
+		Name:        "TestAnomaly",
+	})
+
+	err := container.UpdateAnomalyByName("TestAnomaly", spikeAnomaly)
+	assert.Error(t, err)
 }

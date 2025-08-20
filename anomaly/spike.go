@@ -31,6 +31,7 @@ type spikeAnomaly struct {
 type SpikeParams struct {
 	// Defined in AnomalyBase
 
+	Name       string  `yaml:"Name"`       // name of the anomaly, used for identification
 	Repeats    uint64  `yaml:"Repeats"`    // the number of times spike bursts repeat, 0 for infinite
 	Off        bool    `yaml:"Off"`        // true: anomaly deactivated, false: activated
 	StartDelay float64 `yaml:"StartDelay"` // the delay before spike bursts begin (and time between bursts) in seconds
@@ -70,6 +71,8 @@ func (s *spikeAnomaly) UnmarshalYAML(unmarshal func(any) error) error {
 func NewSpikeAnomaly(params SpikeParams) (*spikeAnomaly, error) {
 	spikeAnomaly := &spikeAnomaly{}
 
+	spikeAnomaly.name = params.Name
+
 	// Invalid values checked by setters
 	if err := spikeAnomaly.SetStartDelay(params.StartDelay); err != nil {
 		return nil, err
@@ -100,7 +103,7 @@ func NewSpikeAnomaly(params SpikeParams) (*spikeAnomaly, error) {
 	return spikeAnomaly, nil
 }
 
-// Returns the change in signal caused by the instantaneous anomaly this timestep.
+// stepAnomaly returns the change in signal caused by the instantaneous anomaly this timestep.
 func (s *spikeAnomaly) stepAnomaly(r *rand.Rand, Ts float64) float64 {
 	if s.Off {
 		return 0.0
