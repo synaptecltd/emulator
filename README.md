@@ -63,7 +63,7 @@ spikes.Magnitude = 1.0 // re-use an anomaly with reduced magnitude
 err := container.AddAnomaly(spikes)
 err := container.AddAnomaly(ramp)
 
-// Specify tempertaure parameters
+// Specify temperature parameters
 emu.T = &emulator.TemperatureEmulation{
     MeanTemperature: 30.0,
     NoiseMag:        0.01,
