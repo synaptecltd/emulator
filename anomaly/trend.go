@@ -11,9 +11,10 @@ import (
 type trendAnomaly struct {
 	AnomalyBase
 
-	Magnitude   float64 // magnitude of trend anomaly, default 0
-	magFuncName string  // name of function to use to vary the trend magnitude, defaults to "linear" if empty
-	InvertTrend bool    // true inverts the trend function (multiplies by -1.0), default false (no inverting)
+	Magnitude    float64 // magnitude of trend anomaly, default 0
+	magFuncName  string  // name of function to use to vary the trend magnitude, defaults to "linear" if empty
+	InvertTrend  bool    // true inverts the trend function (multiplies by -1.0), default false (no inverting)
+	ReverseTrend bool    // true subtracts the original value by 'Magnitude' (equivalent of reversing along horizontal axis)
 
 	// internal state
 	magFunction mathfuncs.MathsFunction // returns trend anomaly magnitude for a given elapsed time, magntiude and period; set internally from TrendFuncName
@@ -31,9 +32,10 @@ type TrendParams struct {
 
 	// Defined in trendAnomaly
 
-	Magnitude   float64 `yaml:"Magnitude"` // magnitude of trend anomaly, default 0
-	MagFuncName string  `yaml:"MagFunc"`   // name of the function used to vary the magnitude of the trend anomaly, empty defaults to "linear"
-	InvertTrend bool    `yaml:"Invert"`    // true inverts the trend function (multiplies by -1.0), default false (no inverting)
+	Magnitude    float64 `yaml:"Magnitude"` // magnitude of trend anomaly, default 0
+	MagFuncName  string  `yaml:"MagFunc"`   // name of the function used to vary the magnitude of the trend anomaly, empty defaults to "linear"
+	InvertTrend  bool    `yaml:"Invert"`    // true inverts the trend function (multiplies by -1.0), default false (no inverting)
+	ReverseTrend bool    `yaml:"Reverse"`   // true subtracts the original value by 'Magnitude' (equivalent of reversing along horizontal axis)
 }
 
 // Initialise the internal fields of TrendAnomaly when it is unmarshalled from yaml.
@@ -102,6 +104,9 @@ func (t *trendAnomaly) stepAnomaly(_ *rand.Rand, Ts float64) float64 {
 
 	trendAnomalyMagnitude := t.magFunction(t.elapsedActivatedTime, t.Magnitude, t.duration)
 	trendAnomalyDelta := t.getSign() * trendAnomalyMagnitude
+	if t.ReverseTrend {
+		trendAnomalyDelta = t.Magnitude - trendAnomalyMagnitude
+	}
 
 	// If the trend anomaly is complete, reset the index and increment the repeat counter
 	if t.elapsedActivatedIndex == int(t.duration/Ts) {
