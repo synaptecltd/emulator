@@ -80,13 +80,8 @@ func NewTrendAnomaly(params TrendParams) (*trendAnomaly, error) {
 	trendAnomaly.Repeats = params.Repeats
 	trendAnomaly.InvertTrend = params.InvertTrend
 	trendAnomaly.ReverseTrend = params.ReverseTrend
+	trendAnomaly.Off = params.Off
 
-	// Set Off based on duration
-	if trendAnomaly.duration == 0 {
-		trendAnomaly.Off = true
-	} else {
-		trendAnomaly.Off = params.Off
-	}
 	return trendAnomaly, nil
 }
 
@@ -109,9 +104,18 @@ func (t *trendAnomaly) stepAnomaly(_ *rand.Rand, Ts float64) float64 {
 	t.elapsedActivatedIndex += 1
 
 	trendAnomalyMagnitude := t.magFunction(t.elapsedActivatedTime, t.Magnitude, t.duration)
-	trendAnomalyDelta := t.getSign() * trendAnomalyMagnitude
-	if t.ReverseTrend {
+
+	// Once we have the magnitude, apply inverting or reversing if required
+	var trendAnomalyDelta float64
+	switch {
+	case t.ReverseTrend && t.InvertTrend: // both true
+		trendAnomalyDelta = -(t.Magnitude - trendAnomalyMagnitude)
+	case t.ReverseTrend: // only reverse true
 		trendAnomalyDelta = t.Magnitude - trendAnomalyMagnitude
+	case t.InvertTrend: // only invert true
+		trendAnomalyDelta = -trendAnomalyMagnitude
+	default: // both false
+		trendAnomalyDelta = trendAnomalyMagnitude
 	}
 
 	// If the trend anomaly is complete, reset the index and increment the repeat counter
@@ -122,14 +126,6 @@ func (t *trendAnomaly) stepAnomaly(_ *rand.Rand, Ts float64) float64 {
 	}
 
 	return trendAnomalyDelta
-}
-
-// Returns -1.0 if InvertTrend is true, or +1.0 if false.
-func (t *trendAnomaly) getSign() float64 {
-	if t.InvertTrend {
-		return -1.0
-	}
-	return 1.0
 }
 
 // Setters
