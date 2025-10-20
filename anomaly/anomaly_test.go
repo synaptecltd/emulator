@@ -189,3 +189,31 @@ func TestUpdateAnomalyByNameChangeType(t *testing.T) {
 	err := container.UpdateAnomalyByName("TestAnomaly", spikeAnomaly)
 	assert.Error(t, err)
 }
+
+// Checking reverse trend paramater functions as intended
+func TestReverseTrend(t *testing.T) {
+	container := anomaly.Container{}
+	params := anomaly.TrendParams{
+		Name:         "ReverseTrendTest",
+		StartDelay:   0.0,
+		Duration:     5.0,
+		Magnitude:    10.0,
+		Repeats:      1,
+		InvertTrend:  false,
+		ReverseTrend: true,
+		Off:          false,
+	}
+
+	trendAnomaly, err := anomaly.NewTrendAnomaly(params)
+	assert.NoError(t, err)
+	container.AddAnomaly(trendAnomaly)
+
+	Ts := 1.0 // time step of 1 second
+	rng := rand.New(rand.NewPCG(42, 0))
+	expectedValues := []float64{10.0, 8.0, 6.0, 4.0, 2.0}
+
+	for i, expected := range expectedValues {
+		value := container.StepAll(rng, Ts)
+		assert.InDelta(t, expected, value, 1e-6, "At step %d", i)
+	}
+}
