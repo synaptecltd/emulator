@@ -80,13 +80,8 @@ func NewTrendAnomaly(params TrendParams) (*trendAnomaly, error) {
 	trendAnomaly.Repeats = params.Repeats
 	trendAnomaly.InvertTrend = params.InvertTrend
 	trendAnomaly.ReverseTrend = params.ReverseTrend
+	trendAnomaly.Off = params.Off
 
-	// Set Off based on duration
-	if trendAnomaly.duration == 0 {
-		trendAnomaly.Off = true
-	} else {
-		trendAnomaly.Off = params.Off
-	}
 	return trendAnomaly, nil
 }
 
