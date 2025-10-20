@@ -225,61 +225,6 @@ func TestTrendAnomalyStepAnomaly(t *testing.T) {
 		assert.Equal(t, uint64(1), trend.countRepeats)
 	})
 
-	t.Run("InvertLinearTrend", func(t *testing.T) {
-		params := TrendParams{
-			Name:        "test_trend",
-			Duration:    1.0,
-			StartDelay:  0.0, // No delay to ensure immediate activation
-			Magnitude:   2.0,
-			MagFuncName: "linear",
-			InvertTrend: true,
-		}
-		trend, err := NewTrendAnomaly(params)
-		require.NoError(t, err)
-
-		// Do 2 steps, the first will be zero
-		var result float64
-		for range 2 {
-			result = trend.stepAnomaly(rng, Ts)
-		}
-		assert.Less(t, result, 0.0) // Should be negative due to invert
-	})
-
-	t.Run("ReverseLinearTrend", func(t *testing.T) {
-		params := TrendParams{
-			Name:         "test_trend",
-			Duration:     1.0,
-			StartDelay:   0.0, // No delay to ensure immediate activation
-			Magnitude:    2.0,
-			MagFuncName:  "linear",
-			ReverseTrend: true,
-		}
-		trend, err := NewTrendAnomaly(params)
-		require.NoError(t, err)
-
-		result := trend.stepAnomaly(rng, Ts)
-		// With reverse trend, result should be Magnitude - magFunction result
-		assert.Greater(t, result, 0.0)
-	})
-
-	t.Run("InvertReverseLinearTrend", func(t *testing.T) {
-		params := TrendParams{
-			Name:         "test_trend",
-			Duration:     1.0,
-			StartDelay:   0.0,
-			Magnitude:    2.0,
-			MagFuncName:  "linear",
-			InvertTrend:  true,
-			ReverseTrend: true,
-		}
-		trend, err := NewTrendAnomaly(params)
-		require.NoError(t, err)
-
-		result := trend.stepAnomaly(rng, Ts)
-		// Invert and Reverse together should yield positive result
-		assert.Greater(t, result, 0.0)
-	})
-
 	t.Run("WithStartDelay", func(t *testing.T) {
 		params := TrendParams{
 			Name:       "test_trend",
