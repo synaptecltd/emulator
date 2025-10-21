@@ -14,20 +14,29 @@ type MathsFunction func(t, A, T float64) float64
 
 // A map between string name and trendFunction pairs
 var mathsFunctions = map[string]MathsFunction{
-	"linear":            linearRamp,
-	"sine":              sineWave,
-	"cosine":            cosineWave,
-	"exponential":       exponentialRamp,
-	"parabolic":         parabolicRamp,
-	"step":              stepFunction,
-	"square":            squareWave,
-	"sawtooth":          sawtoothWave,
-	"impulse":           impulseTrain,
-	"impulse_varying":   impulseTrainVaryingMagnitude,
-	"random_noise":      randomNoise,
-	"gaussian_noise":    gaussianNoise,
-	"exponential_noise": exponentialNoise,
-	"random_walk":       randomWalk,
+	"linear": linearRamp,
+	// "sine": func(t, A, T float64) float64 {
+	// return Sine(t, A, T)
+	// }
+	"sine":                   Sine,
+	"cosine":                 cosineWave,
+	"exponential":            exponentialRamp,
+	"exponential_full":       exponentialRampSaturated,
+	"exponential_decay":      exponentialDecay,
+	"exponential_decay_full": exponentialDecaySaturated,
+	"parabolic":              parabolicRamp,
+	"step":                   stepFunction,
+	"Lstep":                  LstepFunction,
+	"square":                 squareWave,
+	"sawtooth":               sawtoothWave,
+	"impulse":                impulseTrain,
+	"impulse_varying":        impulseTrainVaryingMagnitude,
+	"random_noise":           randomNoise,
+	"gaussian_noise":         gaussianNoise,
+	"exponential_noise":      exponentialNoise,
+	"random_walk":            randomWalk,
+	"flat":                   flat,
+	"warmup_sine":            func(t, A, T float64) float64 { return warmup_sine(t, A, T, 0) },
 }
 
 func GetMathsFunctionNames() []string {
@@ -55,10 +64,13 @@ func linearRamp(t, A, T float64) float64 {
 	return m * t
 }
 
-// Returns a sine wave y=A*sin(2*pi*t/T) where A is the amplitude,
-// T is the period, and t is elapsed time.
-func sineWave(t, A, T float64) float64 {
-	return A * fast.Sin(2*math.Pi*t/T)
+// Returns a sine wave y = A*sin(2π * t / PeriodDuration)
+// PeriodDuration defines the cycle length in seconds.
+func Sine(t, A, PeriodDuration float64) float64 {
+	if PeriodDuration <= 0 {
+		PeriodDuration = 86400.0 // default to 1 day
+	}
+	return A * math.Sin(2*math.Pi*t/PeriodDuration)
 }
 
 // Returns a cosine wave y=A*cos(2*pi*t/T) where A is the amplitude,
@@ -73,6 +85,24 @@ func exponentialRamp(t, A, T float64) float64 {
 	return A*math.Exp(t/T) - A
 }
 
+// Returns an exponential ramp y=A*exp(5*t/T) - A where A is the amplitude,
+// T is the time constant, and t is elapsed time.
+func exponentialRampSaturated(t, A, T float64) float64 {
+	return A*math.Exp(5*t/T) - A
+}
+
+// Returns an exponential decay y=A*exp(-t/T) where A is the amplitude,
+// T is the time constant, and t is elapsed time.
+func exponentialDecay(t, A, T float64) float64 {
+	return A * math.Exp(-t/T)
+}
+
+// Returns an exponential decay y=A*exp(-t/T) where A is the amplitude,
+// T is the time constant, and t is elapsed time.
+func exponentialDecaySaturated(t, A, T float64) float64 {
+	return A * (1 - math.Exp(-t/T))
+}
+
 // Returns a parabolic ramp of amplitude A every period T.
 func parabolicRamp(t, A, T float64) float64 {
 	return A * (t / T) * (t / T) // faster power of two compared to math.Pow(t/T, 2)
@@ -85,6 +115,15 @@ func stepFunction(t, A, T float64) float64 {
 	} else {
 		return A
 	}
+}
+
+// LstepFunction: creates a one-time downward step that stays flat afterward.
+// Produces an 'L' shape — a small drop followed by a flat line.
+func LstepFunction(t, A, T float64) float64 {
+	if t >= 0 {
+		return -A // step down
+	}
+	return 0
 }
 
 // Returns a square wave y=A if sin(2*pi*t/T) >= 0, else -A.
@@ -134,6 +173,28 @@ func gaussianNoise(_, A, _ float64) float64 {
 // Returns additional exponential noise of amplitude A.
 func exponentialNoise(_, A, _ float64) float64 {
 	return -A * math.Log(rand.Float64())
+}
+
+// WarmupTemp generates a refined sinusoidal warm-up pattern with configurable period and amplitude.
+// t: elapsed time in seconds
+// A: amplitude of oscillation (e.g., ±1.5°C)
+// period: oscillation period (seconds) — typically 3600 for 1-hour cycles
+// base: baseline temperature (°C)
+func warmup_sine(t, A, period, _ float64) float64 {
+	// Primary sine: smooth oscillation with one cycle per `period`
+	primary := A * math.Sin(2.0*math.Pi*t/period)
+
+	// Secondary small wave: adds subtle natural variation (higher frequency)
+	secondary := 0.5 * A * math.Sin(6.0*math.Pi*t/period)
+
+	// Combine and return
+	return primary + secondary
+}
+
+// flat returns a constant value equal to A (amplitude),
+// independent of time t or period T.
+func flat(t, A, T float64) float64 {
+	return A
 }
 
 // Returns a random walk that lasts for period T. The walk is bounded

@@ -11,10 +11,11 @@ import (
 type trendAnomaly struct {
 	AnomalyBase
 
-	Magnitude    float64 // magnitude of trend anomaly, default 0
-	magFuncName  string  // name of function to use to vary the trend magnitude, defaults to "linear" if empty
-	InvertTrend  bool    // true inverts the trend function (multiplies by -1.0), default false (no inverting)
-	ReverseTrend bool    // true subtracts the original value by 'Magnitude' (equivalent of reversing along horizontal axis)
+	Magnitude      float64 // magnitude of trend anomaly, default 0
+	magFuncName    string  // name of function to use to vary the trend magnitude, defaults to "linear" if empty
+	InvertTrend    bool    // true inverts the trend function (multiplies by -1.0), default false (no inverting)
+	ReverseTrend   bool    // true subtracts the original value by 'Magnitude' (equivalent of reversing along horizontal axis)
+	PeriodDuration float64 // duration of one period of the anomaly in seconds
 
 	// internal state
 	magFunction mathfuncs.MathsFunction // returns trend anomaly magnitude for a given elapsed time, magntiude and period; set internally from TrendFuncName
@@ -24,11 +25,12 @@ type trendAnomaly struct {
 type TrendParams struct {
 	// Defined in AnomalyBase
 
-	Name       string  `yaml:"Name"`       // name of the anomaly, used for identification
-	Repeats    uint64  `yaml:"Repeats"`    // the number of times the trend anomaly repeats, 0 for infinite
-	Off        bool    `yaml:"Off"`        // true: anomaly deactivated, false: activated
-	StartDelay float64 `yaml:"StartDelay"` // the delay before trend anomalies begin (and between anomaly repeats) in seconds
-	Duration   float64 `yaml:"Duration"`   // the duration of each trend anomaly in seconds, 0 for continuous
+	Name           string  `yaml:"Name"`           // name of the anomaly, used for identification
+	Repeats        uint64  `yaml:"Repeats"`        // the number of times the trend anomaly repeats, 0 for infinite
+	Off            bool    `yaml:"Off"`            // true: anomaly deactivated, false: activated
+	StartDelay     float64 `yaml:"StartDelay"`     // the delay before trend anomalies begin (and between anomaly repeats) in seconds
+	Duration       float64 `yaml:"Duration"`       // the duration of each trend anomaly in seconds, 0 for continuous
+	PeriodDuration float64 `yaml:"PeriodDuration"` // duration of one period of the anomaly in seconds
 
 	// Defined in trendAnomaly
 
@@ -70,6 +72,13 @@ func NewTrendAnomaly(params TrendParams) (*trendAnomaly, error) {
 	if err := trendAnomaly.SetStartDelay(params.StartDelay); err != nil {
 		return nil, err
 	}
+
+	/*if params.CustomMagFunction != nil {
+		// supercede MagFuncName if CustomMagFunction provided
+		trendAnomaly.magFunction = params.CustomMagFunction
+		trendAnomaly.magFuncName = "custom"
+	} */
+
 	if err := trendAnomaly.SetMagFunctionByName(params.MagFuncName); err != nil {
 		return nil, err
 	}
@@ -80,6 +89,7 @@ func NewTrendAnomaly(params TrendParams) (*trendAnomaly, error) {
 	trendAnomaly.Repeats = params.Repeats
 	trendAnomaly.InvertTrend = params.InvertTrend
 	trendAnomaly.ReverseTrend = params.ReverseTrend
+	trendAnomaly.PeriodDuration = params.PeriodDuration
 
 	if trendAnomaly.duration == 0 {
 		// This logic is also in SetDuration, but ensure it's set here too
@@ -108,6 +118,12 @@ func (t *trendAnomaly) stepAnomaly(_ *rand.Rand, Ts float64) float64 {
 	// Update the index after logging the current time
 	t.elapsedActivatedTime = float64(t.elapsedActivatedIndex) * Ts
 	t.elapsedActivatedIndex += 1
+
+	// Stop after total duration (important for sine cutoff) ---
+	if t.elapsedActivatedTime > t.duration {
+		t.isAnomalyActive = false
+		return 0.0
+	}
 
 	trendAnomalyMagnitude := t.magFunction(t.elapsedActivatedTime, t.Magnitude, t.duration)
 
