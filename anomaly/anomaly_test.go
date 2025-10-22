@@ -12,48 +12,98 @@ import (
 
 // Test anomalies can be unmarshalled from yaml
 func TestUnmarshalYAML(t *testing.T) {
+	type testcase struct {
+		yamlStr     string
+		ErrorExp    bool
+		Description string
+	}
+
 	startDelay := rand.Float64()
 	duration := rand.Float64()
 	probability := rand.Float64()
 
-	yamlStr := fmt.Sprintf(`
+	testcases := []testcase{
+		{
+			fmt.Sprintf(`
 - Type: trend
   StartDelay: %f
+  Repeats: 3
   Duration: %f
   Name: Trend Anomaly
 - Type: spike
   Probability: %f
+  Repeats: 3
   Name: Spike Anomaly
-`,
-		startDelay, duration, probability)
+`, startDelay, duration, probability),
+			false,
+			"Correctly Specified, No Error Expected",
+		},
+		{
+			fmt.Sprintf(`
+- Type: trend
+  StartDelay: %f
+  Repeats: 3
+  Duration: %f
+  Name: Trend Anomaly
+- Type: spike
+  Probability: %f
+  Repeat: 3
+  Name: Spike Anomaly
+`, startDelay, duration, probability),
+			true,
+			"Incorrectly Specified, Use of Repeat vs Repeats, Error Expected",
+		},
+		{
+			fmt.Sprintf(`
+- StartDelay: %f
+  Repeats: 3
+  Duration: %f
+  Name: Trend Anomaly
+`, startDelay, duration),
+			true,
+			"Incorrectly Specified, No Type, Error Expected",
+		},
+	}
 
-	var container anomaly.Container
-	err := yaml.Unmarshal([]byte(yamlStr), &container)
-	assert.NoError(t, err)
+	for _, tc := range testcases {
+		t.Run(tc.Description, func(t *testing.T) {
+			t.Log(tc.yamlStr)
+			// Contains yaml override
+			var container anomaly.Container
+			// Attempt parsing
+			err := yaml.Unmarshal([]byte(tc.yamlStr), &container)
+			// Check bad params are rejected
+			if tc.ErrorExp {
+				assert.Error(t, err)
+				return
+			}
+			assert.NoError(t, err)
+			// Validate contents
 
-	trendAnomaly, _ := anomaly.NewTrendAnomaly(
-		anomaly.TrendParams{
-			StartDelay: startDelay,
-			Duration:   duration,
+			// These are the expected anomalies
+			trendAnomaly, _ := anomaly.NewTrendAnomaly(
+				anomaly.TrendParams{
+					StartDelay: startDelay,
+					Duration:   duration,
+				})
+			spikeAnomaly, _ := anomaly.NewSpikeAnomaly(
+				anomaly.SpikeParams{
+					Probability: probability,
+				})
+
+			for _, anom := range container {
+				var expected anomaly.AnomalyInterface
+				switch anom.GetTypeAsString() {
+				case "trend":
+					expected = trendAnomaly
+				case "spike":
+					expected = spikeAnomaly
+				}
+				assert.Equal(t, expected.GetTypeAsString(), anom.GetTypeAsString())
+				assert.InDelta(t, expected.GetDuration(), anom.GetDuration(), 1e-6) // floating point precision
+				assert.InDelta(t, expected.GetStartDelay(), anom.GetStartDelay(), 1e-6)
+			}
 		})
-
-	instAnomaly, _ := anomaly.NewSpikeAnomaly(
-		anomaly.SpikeParams{
-			Probability: probability,
-		})
-
-	for _, anom := range container {
-		var expected anomaly.AnomalyInterface
-		switch anom.GetTypeAsString() {
-		case "trend":
-			expected = trendAnomaly
-		case "spike":
-			expected = instAnomaly
-		}
-		assert.Equal(t, expected.GetTypeAsString(), anom.GetTypeAsString())
-		assert.InDelta(t, expected.GetDuration(), anom.GetDuration(), 1e-6) // floating point precision
-		assert.InDelta(t, expected.GetStartDelay(), anom.GetStartDelay(), 1e-6)
-
 	}
 }
 
