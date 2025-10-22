@@ -1,6 +1,7 @@
 package anomaly
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"math/rand/v2"
@@ -52,44 +53,67 @@ func (c *Container) UnmarshalYAML(unmarshal func(any) error) error {
 		*c = make(Container, 0)
 	}
 
+	// Reading in generically first
 	var raw []map[string]any
 	err := unmarshal(&raw)
 	if err != nil {
 		return err
 	}
 
-	var anomaly AnomalyInterface
+	// iterate through each, action depending on the field of "Type"
+	for _, item := range raw {
+		typeVal, ok := item["Type"]
+		if !ok {
+			return fmt.Errorf("missing Type field in anomaly entry")
+		}
 
-	// Match on the definition of the anomaly type
-	for _, anomalyEntry := range raw {
-		if anomalyEntry["Type"] != nil {
-			switch anomalyEntry["Type"] {
-			case "spike":
-				anomaly = &spikeAnomaly{}
-			case "trend":
-				anomaly = &trendAnomaly{}
-			default:
-				return fmt.Errorf("unknown anomaly type: %s", anomalyEntry["Type"])
+		typeAsStr, ok := typeVal.(string)
+		if !ok {
+			return fmt.Errorf("field Type must be a string")
+		}
+
+		// Remove Type from map to prevent duplication
+		delete(item, "Type")
+
+		// Marshal map back to YAML bytes
+		anomalyParams, err := yaml.Marshal(item)
+		if err != nil {
+			return err
+		}
+		// Creates correctly typed anomaly and calls its method for parsing via the decodeStrict.
+		// This uses its defined UnmarshalYAML method, which populates its fields, and then adds it to the container.
+		switch typeAsStr {
+		case "spike":
+			anomaly := &spikeAnomaly{}
+			err := decodeStrict(anomalyParams, anomaly)
+			if err != nil {
+				return err
 			}
-		}
-		// Convert the value map into YAML for unmarshalling into an anomaly
-		valueYAML, err := yaml.Marshal(anomalyEntry)
-		if err != nil {
-			return err
-		}
-
-		// Unmarshal the YAML into the anomaly
-		err = yaml.Unmarshal(valueYAML, anomaly)
-		if err != nil {
-			return err
-		}
-
-		err = c.AddAnomaly(anomaly)
-		if err != nil {
-			return err
+			err = c.AddAnomaly(anomaly)
+			if err != nil {
+				return err
+			}
+		case "trend":
+			anomaly := &trendAnomaly{}
+			err := decodeStrict(anomalyParams, anomaly)
+			if err != nil {
+				return err
+			}
+			err = c.AddAnomaly(anomaly)
+			if err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf("unknown anomaly type: %s", typeAsStr)
 		}
 	}
 	return nil
+}
+
+// decodeStrict decodes data into out using goccy/go-yaml in strict mode.
+func decodeStrict(data []byte, out any) error {
+	decoder := yaml.NewDecoder(bytes.NewReader(data), yaml.Strict())
+	return decoder.Decode(out)
 }
 
 // Steps all anomalies within a container and returns the sum of their effects.

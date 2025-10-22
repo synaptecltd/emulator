@@ -14,21 +14,23 @@ type trendAnomaly struct {
 	Magnitude    float64 // magnitude of trend anomaly, default 0
 	magFuncName  string  // name of function to use to vary the trend magnitude, defaults to "linear" if empty
 	InvertTrend  bool    // true inverts the trend function (multiplies by -1.0), default false (no inverting)
-	ReverseTrend bool    // true subtracts the original value by 'Magnitude' (equivalent of reversing along horizontal axis)
+	ReverseTrend bool    // true subtracts the original value by 'Magnitude' (mimicking reversal along horizontal axis) - note can cause offset
 
 	// internal state
-	magFunction mathfuncs.MathsFunction // returns trend anomaly magnitude for a given elapsed time, magntiude and period; set internally from TrendFuncName
+	magFunction    mathfuncs.MathsFunction // returns trend anomaly magnitude for a given elapsed time, magntiude and period; set internally from TrendFuncName
+	periodDuration float64                 // duration of periods within the duration window, if 0, Duration is used as period.
 }
 
 // Parameters to use for the trend anomaly. All can be accessed publicly and used to define trendAnomaly.
 type TrendParams struct {
 	// Defined in AnomalyBase
 
-	Name       string  `yaml:"Name"`       // name of the anomaly, used for identification
-	Repeats    uint64  `yaml:"Repeats"`    // the number of times the trend anomaly repeats, 0 for infinite
-	Off        bool    `yaml:"Off"`        // true: anomaly deactivated, false: activated
-	StartDelay float64 `yaml:"StartDelay"` // the delay before trend anomalies begin (and between anomaly repeats) in seconds
-	Duration   float64 `yaml:"Duration"`   // the duration of each trend anomaly in seconds, 0 for continuous
+	Name           string  `yaml:"Name"`           // name of the anomaly, used for identification
+	Repeats        uint64  `yaml:"Repeats"`        // the number of times the trend anomaly repeats, 0 for infinite
+	Off            bool    `yaml:"Off"`            // true: anomaly deactivated, false: activated
+	StartDelay     float64 `yaml:"StartDelay"`     // the delay before trend anomalies begin (and between anomaly repeats) in seconds
+	Duration       float64 `yaml:"Duration"`       // the duration of each trend anomaly in seconds, 0 for continuous
+	PeriodDuration float64 `yaml:"PeriodDuration"` // duration of periods within the duration window, if 0, Duration is used as period.
 
 	// Defined in trendAnomaly
 
@@ -36,6 +38,11 @@ type TrendParams struct {
 	MagFuncName  string  `yaml:"MagFunc"`   // name of the function used to vary the magnitude of the trend anomaly, empty defaults to "linear"
 	InvertTrend  bool    `yaml:"Invert"`    // true inverts the trend function (multiplies by -1.0), default false (no inverting)
 	ReverseTrend bool    `yaml:"Reverse"`   // true subtracts the original value by 'Magnitude' (equivalent of reversing along horizontal axis)
+}
+
+// Helper function redirecting back to decodeStrict using correct type
+func (t *trendAnomaly) UnmarshalYAMLBytes(data []byte) error {
+	return decodeStrict(data, t)
 }
 
 // Initialise the internal fields of TrendAnomaly when it is unmarshalled from yaml.
@@ -61,7 +68,14 @@ func (t *trendAnomaly) UnmarshalYAML(unmarshal func(any) error) error {
 func NewTrendAnomaly(params TrendParams) (*trendAnomaly, error) {
 	trendAnomaly := &trendAnomaly{}
 
+	// Fields that can never be invalid set directly
 	trendAnomaly.name = params.Name
+	trendAnomaly.typeName = "trend"
+	trendAnomaly.Magnitude = params.Magnitude
+	trendAnomaly.Repeats = params.Repeats
+	trendAnomaly.InvertTrend = params.InvertTrend
+	trendAnomaly.ReverseTrend = params.ReverseTrend
+	trendAnomaly.Off = params.Off // This can overridden by SetDuration below
 
 	// Invalid values checked by setters
 	if err := trendAnomaly.SetDuration(params.Duration); err != nil {
@@ -73,19 +87,8 @@ func NewTrendAnomaly(params TrendParams) (*trendAnomaly, error) {
 	if err := trendAnomaly.SetMagFunctionByName(params.MagFuncName); err != nil {
 		return nil, err
 	}
-
-	// Fields that can never be invalid set directly
-	trendAnomaly.typeName = "trend"
-	trendAnomaly.Magnitude = params.Magnitude
-	trendAnomaly.Repeats = params.Repeats
-	trendAnomaly.InvertTrend = params.InvertTrend
-	trendAnomaly.ReverseTrend = params.ReverseTrend
-
-	if trendAnomaly.duration == 0 {
-		// This logic is also in SetDuration, but ensure it's set here too
-		trendAnomaly.Off = true
-	} else {
-		trendAnomaly.Off = params.Off
+	if err := trendAnomaly.SetPeriodDuration(params.PeriodDuration); err != nil {
+		return nil, err
 	}
 
 	return trendAnomaly, nil
@@ -109,7 +112,8 @@ func (t *trendAnomaly) stepAnomaly(_ *rand.Rand, Ts float64) float64 {
 	t.elapsedActivatedTime = float64(t.elapsedActivatedIndex) * Ts
 	t.elapsedActivatedIndex += 1
 
-	trendAnomalyMagnitude := t.magFunction(t.elapsedActivatedTime, t.Magnitude, t.duration)
+	// periodDuration is either Duration if it was originally set at 0, or user-defined value
+	trendAnomalyMagnitude := t.magFunction(t.elapsedActivatedTime, t.Magnitude, t.periodDuration)
 
 	// Once we have the magnitude, apply inverting or reversing if required
 	var trendAnomalyDelta float64
@@ -146,6 +150,20 @@ func (t *trendAnomaly) SetDuration(duration float64) error {
 		t.Off = true
 	}
 	t.duration = duration
+	return nil
+}
+
+// Sets the period duration for the signal during a trend anomaly in seconds if periodDuration >= 0.
+// If periodDuration=0, the duration of the trend anomaly is used as the period duration.
+func (t *trendAnomaly) SetPeriodDuration(periodDuration float64) error {
+	if periodDuration < 0 {
+		return errors.New("periodDuration must be positive value")
+	}
+	if periodDuration == 0 {
+		t.periodDuration = t.duration // defer to duration
+		return nil
+	}
+	t.periodDuration = periodDuration
 	return nil
 }
 
