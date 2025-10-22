@@ -76,7 +76,13 @@ func (s *spikeAnomaly) UnmarshalYAML(unmarshal func(any) error) error {
 func NewSpikeAnomaly(params SpikeParams) (*spikeAnomaly, error) {
 	spikeAnomaly := &spikeAnomaly{}
 
+	// Fields that can never be invalid set directly
 	spikeAnomaly.name = params.Name
+	spikeAnomaly.typeName = "spike"
+	spikeAnomaly.Magnitude = params.Magnitude
+	spikeAnomaly.VaryMagnitude = params.VaryMagnitude
+	spikeAnomaly.Repeats = params.Repeats
+	spikeAnomaly.Off = params.Off
 
 	// Invalid values checked by setters
 	if err := spikeAnomaly.SetStartDelay(params.StartDelay); err != nil {
@@ -97,13 +103,6 @@ func NewSpikeAnomaly(params SpikeParams) (*spikeAnomaly, error) {
 	if err := spikeAnomaly.SetDuration(params.Duration); err != nil {
 		return nil, err
 	}
-
-	// Fields that can never be invalid set directly
-	spikeAnomaly.typeName = "spike"
-	spikeAnomaly.Magnitude = params.Magnitude
-	spikeAnomaly.VaryMagnitude = params.VaryMagnitude
-	spikeAnomaly.Repeats = params.Repeats
-	spikeAnomaly.Off = params.Off
 
 	return spikeAnomaly, nil
 }
@@ -186,7 +185,7 @@ func (s *spikeAnomaly) getSign(r *rand.Rand) float64 {
 func (s *spikeAnomaly) SetDuration(duration float64) error {
 	if duration == 0 {
 		if s.magFunction != nil {
-			return errors.New("duration must be greater than 0 when using a functional dependence for magntiude")
+			return errors.New("duration must be greater than 0 when using a functional dependence for magnitude")
 		}
 		duration = -1.0 // continuous burst
 	}

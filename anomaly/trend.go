@@ -68,7 +68,14 @@ func (t *trendAnomaly) UnmarshalYAML(unmarshal func(any) error) error {
 func NewTrendAnomaly(params TrendParams) (*trendAnomaly, error) {
 	trendAnomaly := &trendAnomaly{}
 
+	// Fields that can never be invalid set directly
 	trendAnomaly.name = params.Name
+	trendAnomaly.typeName = "trend"
+	trendAnomaly.Magnitude = params.Magnitude
+	trendAnomaly.Repeats = params.Repeats
+	trendAnomaly.InvertTrend = params.InvertTrend
+	trendAnomaly.ReverseTrend = params.ReverseTrend
+	trendAnomaly.Off = params.Off // This can overridden by SetDuration below
 
 	// Invalid values checked by setters
 	if err := trendAnomaly.SetDuration(params.Duration); err != nil {
@@ -83,14 +90,6 @@ func NewTrendAnomaly(params TrendParams) (*trendAnomaly, error) {
 	if err := trendAnomaly.SetPeriodDuration(params.PeriodDuration); err != nil {
 		return nil, err
 	}
-
-	// Fields that can never be invalid set directly
-	trendAnomaly.typeName = "trend"
-	trendAnomaly.Magnitude = params.Magnitude
-	trendAnomaly.Repeats = params.Repeats
-	trendAnomaly.InvertTrend = params.InvertTrend
-	trendAnomaly.ReverseTrend = params.ReverseTrend
-	trendAnomaly.Off = params.Off
 
 	return trendAnomaly, nil
 }

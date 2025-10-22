@@ -105,7 +105,7 @@ func TestNewTrendAnomaly(t *testing.T) {
 
 		_, err := NewTrendAnomaly(params)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "duration must be positive")
+		assert.Contains(t, err.Error(), "duration must be positive value")
 	})
 
 	t.Run("InvalidStartDelay", func(t *testing.T) {
