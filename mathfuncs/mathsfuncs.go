@@ -30,6 +30,14 @@ var mathsFunctions = map[string]MathsFunction{
 	"random_walk":       randomWalk,
 }
 
+func GetMathsFunctionNames() []string {
+	names := make([]string, 0, len(mathsFunctions))
+	for name := range mathsFunctions {
+		names = append(names, name)
+	}
+	return names
+}
+
 // Returns the named trend function. Defaults to linear if name is empty.
 func GetTrendFunctionFromName(name string) (MathsFunction, error) {
 	trendFunc, ok := mathsFunctions[name]
