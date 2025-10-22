@@ -1,6 +1,7 @@
 package emulator
 
 import (
+	"fmt"
 	"math"
 	"testing"
 
@@ -228,4 +229,67 @@ func TestCurrentPosSeqAnomalies_RisingTrend(t *testing.T) {
 	}
 	targetMag := emulator.I.PosSeqMag + trendParams.Magnitude
 	assert.InDelta(t, targetMag, maxMag, 50)
+}
+
+func TestTrendAnomalyPeriodDuration(t *testing.T) {
+	type testcase struct {
+		Duration       float64
+		PeriodDuration float64
+		Repeats        uint64
+		Expected       []float64
+	}
+
+	testcases := []testcase{
+		{Duration: 5, PeriodDuration: 0, Repeats: 1, Expected: []float64{0.0, 1.0, 2.0, 3.0, 4.0, 0.0, 0.0}},  // Should defer to Duration: No Change
+		{Duration: 5, PeriodDuration: 5, Repeats: 1, Expected: []float64{0.0, 1.0, 2.0, 3.0, 4.0, 0.0, 0.0}},  // Matching Duration: No Change
+		{Duration: 5, PeriodDuration: 2, Repeats: 1, Expected: []float64{0.0, 2.5, 5.0, 7.5, 10.0, 0.0, 0.0}}, // Shorter Than Duration: Change
+		{Duration: 5, PeriodDuration: 10, Repeats: 1, Expected: []float64{0.0, 0.5, 1.0, 1.5, 2.0, 0.0, 0.0}}, // Longer Than Duration: Change
+		{Duration: 5, PeriodDuration: 0, Repeats: 0, Expected: []float64{0.0, 1.0, 2.0, 3.0, 4.0, 0.0, 1.0}},  // Should defer to Duration: No Change
+		{Duration: 5, PeriodDuration: 5, Repeats: 0, Expected: []float64{0.0, 1.0, 2.0, 3.0, 4.0, 0.0, 1.0}},  // Matching Duration: No Change
+		{Duration: 5, PeriodDuration: 2, Repeats: 0, Expected: []float64{0.0, 2.5, 5.0, 7.5, 10.0, 0.0, 2.5}}, // Shorter Than Duration: Change
+		{Duration: 5, PeriodDuration: 10, Repeats: 0, Expected: []float64{0.0, 0.5, 1.0, 1.5, 2.0, 0.0, 0.5}}, // Longer Than Duration: Change
+	}
+
+	samplingRate := 1 // 1 Hz
+	freq := 1.0       // 1 Hz
+
+	for _, tc := range testcases {
+		t.Run(fmt.Sprintf("Duration:%v-PeriodDuration:%v", tc.Duration, tc.PeriodDuration), func(t *testing.T) {
+			// New Trend Anomaly Params
+			trendParams := anomaly.TrendParams{
+				Name:           "ReverseInvertTrendTest",
+				Repeats:        tc.Repeats,
+				StartDelay:     0.0,
+				Duration:       tc.Duration,
+				PeriodDuration: tc.PeriodDuration,
+				Magnitude:      5.0,
+				InvertTrend:    false,
+				ReverseTrend:   false,
+				Off:            false,
+			}
+
+			// New Trend Anomaly
+			trendAnomaly, err := anomaly.NewTrendAnomaly(trendParams)
+			assert.NoError(t, err)
+
+			// New Trend Anomaly Container
+			anomalyContainer := anomaly.Container{trendAnomaly}
+
+			// New Emulator
+			emu := NewEmulator(samplingRate, freq)
+
+			// New Temeprature emulator with anomaly
+			emu.T = &TemperatureEmulation{
+				MeanTemperature: 0.0,
+				NoiseMag:        0.0,
+				Anomaly:         anomalyContainer,
+			}
+
+			for i, expected := range tc.Expected {
+				emu.Step()
+				value := emu.T.T
+				assert.InDelta(t, expected, value, 1e-6, "At step %d with Duration=%v PeriodDuration=%v", i, tc.Duration, tc.PeriodDuration)
+			}
+		})
+	}
 }

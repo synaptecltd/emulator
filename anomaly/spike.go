@@ -48,6 +48,11 @@ type SpikeParams struct {
 	ProbFuncName string  `yaml:"ProbFunc"`    // name of the function used to vary the probability of the spikes, empty defaults to constant =probability
 }
 
+// Helper function redirecting back to decodeStrict using correct type
+func (s *spikeAnomaly) UnmarshalYAMLBytes(data []byte) error {
+	return decodeStrict(data, s)
+}
+
 // Initialise the internal fields of SpikeAnomaly when it is unmarshalled from yaml.
 func (s *spikeAnomaly) UnmarshalYAML(unmarshal func(any) error) error {
 	var params SpikeParams
