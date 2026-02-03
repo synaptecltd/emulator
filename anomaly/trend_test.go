@@ -179,6 +179,40 @@ Duration: -5.0
 	})
 }
 
+func TestTrendAnomalyMarshalYAML(t *testing.T) {
+	params := TrendParams{
+		Name:           "test_trend",
+		Repeats:        4,
+		Off:            false,
+		StartDelay:     1.0,
+		Duration:       10.0,
+		PeriodDuration: 10.0,
+		Magnitude:      3.0,
+		MagFuncName:    "cosine",
+		InvertTrend:    false,
+		ReverseTrend:   true,
+	}
+	trend, err := NewTrendAnomaly(params)
+	require.NoError(t, err)
+
+	yamlData, err := yaml.Marshal(trend)
+	require.NoError(t, err)
+
+	expectedYAML := `Type: trend
+Name: test_trend
+Repeats: 4
+"Off": false
+StartDelay: 1.0
+Duration: 10.0
+PeriodDuration: 10.0
+Magnitude: 3.0
+MagFunc: cosine
+Invert: false
+Reverse: true
+`
+	assert.Equal(t, expectedYAML, string(yamlData))
+}
+
 func TestTrendAnomalyStepAnomaly(t *testing.T) {
 	rng := rand.New(rand.NewPCG(42, 0))
 	Ts := 0.1

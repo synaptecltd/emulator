@@ -16,6 +16,7 @@ type Container []AnomalyInterface
 // AnomalyInterface is the interface for all anomaly Types (trends, instantaneous, etc).
 type AnomalyInterface interface {
 	UnmarshalYAML(unmarshal func(any) error) error // Unmarshals an anomaly entry into the correct type based on the type field
+	MarshalYAML() (any, error)                     // Marshals an anomaly entry into yaml format
 
 	// Inherited from AnomalyBase
 	GetName() string                  // Returns the name of the anomaly, used for identification

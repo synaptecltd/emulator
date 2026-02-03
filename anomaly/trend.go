@@ -25,6 +25,7 @@ type trendAnomaly struct {
 type TrendParams struct {
 	// Defined in AnomalyBase
 
+	Type           string  `yaml:"Type"`           // type of anomaly, must be "trend"
 	Name           string  `yaml:"Name"`           // name of the anomaly, used for identification
 	Repeats        uint64  `yaml:"Repeats"`        // the number of times the trend anomaly repeats, 0 for infinite
 	Off            bool    `yaml:"Off"`            // true: anomaly deactivated, false: activated
@@ -62,6 +63,24 @@ func (t *trendAnomaly) UnmarshalYAML(unmarshal func(any) error) error {
 	*t = *trendAnomaly
 
 	return nil
+}
+
+func (t *trendAnomaly) MarshalYAML() (any, error) {
+	return TrendParams{
+		// AnomalyBase fields
+		Type:           "trend",
+		Name:           t.name,
+		Repeats:        t.Repeats,
+		Off:            t.Off,
+		StartDelay:     t.startDelay,
+		Duration:       t.duration,
+		PeriodDuration: t.periodDuration,
+		// trendAnomaly fields
+		Magnitude:    t.Magnitude,
+		MagFuncName:  t.magFuncName,
+		InvertTrend:  t.InvertTrend,
+		ReverseTrend: t.ReverseTrend,
+	}, nil
 }
 
 // Returns a trendAnomaly pointer with the requested parameters, checking for invalid values.

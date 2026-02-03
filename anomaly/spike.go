@@ -31,6 +31,7 @@ type spikeAnomaly struct {
 type SpikeParams struct {
 	// Defined in AnomalyBase
 
+	Type       string  `yaml:"Type"`       // type of anomaly, must be "spike"
 	Name       string  `yaml:"Name"`       // name of the anomaly, used for identification
 	Repeats    uint64  `yaml:"Repeats"`    // the number of times spike bursts repeat, 0 for infinite
 	Off        bool    `yaml:"Off"`        // true: anomaly deactivated, false: activated
@@ -70,6 +71,26 @@ func (s *spikeAnomaly) UnmarshalYAML(unmarshal func(any) error) error {
 	*s = *spikeAnomaly
 
 	return nil
+}
+
+func (s *spikeAnomaly) MarshalYAML() (any, error) {
+	spike := SpikeParams{
+		// AnomalyBase fields
+		Type:       "spike",
+		Name:       s.name,
+		Repeats:    s.Repeats,
+		Off:        s.Off,
+		StartDelay: s.startDelay,
+		Duration:   s.duration,
+		// spikeAnomaly fields
+		Magnitude:     s.Magnitude,
+		MagFuncName:   s.magFuncName,
+		VaryMagnitude: s.VaryMagnitude,
+		SpikeSign:     s.spikeSign,
+		Probability:   s.probability,
+		ProbFuncName:  s.probFuncName,
+	}
+	return spike, nil
 }
 
 // Returns a spikeAnomaly pointer with the requested parameters, checking for invalid values.
