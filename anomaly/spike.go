@@ -231,8 +231,8 @@ func (s *spikeAnomaly) GetSpikeSign() float64 {
 	return s.spikeSign
 }
 
-func (s *spikeAnomaly) GetMagFunctionName() mathfuncs.MathsFunction {
-	return s.magFunction
+func (s *spikeAnomaly) GetMagFunctionName() string {
+	return s.magFuncName
 }
 
 func (s *spikeAnomaly) GetProbFunctionName() string {

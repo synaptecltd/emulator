@@ -34,6 +34,11 @@ type AnomalyInterface interface {
 	stepAnomaly(r *rand.Rand, Ts float64) float64 // Steps the internal time state of an anomaly and returns the change in signal caused by the anomaly
 }
 
+var anomalyRegistry = map[string]func() AnomalyInterface{
+	"spike": func() AnomalyInterface { return &spikeAnomaly{} },
+	"trend": func() AnomalyInterface { return &trendAnomaly{} },
+}
+
 // Attempts to cast an AnomalyInterface to a trendAnomaly. Returns the anomaly as a trendAnomaly and boolean indicating success.
 func AsTrendAnomaly(a AnomalyInterface) (*trendAnomaly, bool) {
 	trendAnomaly, ok := a.(*trendAnomaly)
@@ -82,29 +87,19 @@ func (c *Container) UnmarshalYAML(unmarshal func(any) error) error {
 		}
 		// Creates correctly typed anomaly and calls its method for parsing via the decodeStrict.
 		// This uses its defined UnmarshalYAML method, which populates its fields, and then adds it to the container.
-		switch typeAsStr {
-		case "spike":
-			anomaly := &spikeAnomaly{}
-			err := decodeStrict(anomalyParams, anomaly)
-			if err != nil {
-				return err
-			}
-			err = c.AddAnomaly(anomaly)
-			if err != nil {
-				return err
-			}
-		case "trend":
-			anomaly := &trendAnomaly{}
-			err := decodeStrict(anomalyParams, anomaly)
-			if err != nil {
-				return err
-			}
-			err = c.AddAnomaly(anomaly)
-			if err != nil {
-				return err
-			}
-		default:
+		constructor, ok := anomalyRegistry[typeAsStr]
+		if !ok {
 			return fmt.Errorf("unknown anomaly type: %s", typeAsStr)
+		}
+
+		anomaly := constructor()
+		err = decodeStrict(anomalyParams, anomaly)
+		if err != nil {
+			return err
+		}
+		err = c.AddAnomaly(anomaly)
+		if err != nil {
+			return err
 		}
 	}
 	return nil
